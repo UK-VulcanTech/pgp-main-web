@@ -1,0 +1,54 @@
+export default function WhatPGPDelivers() {
+  const items = [
+    {
+      title: "INFRASTRUCTURE + ESSENTIAL SERVICES",
+      description:
+        "Modernize and operate systems that communities and economies rely on.",
+    },
+    {
+      title: "TECHNOLOGY ENABLEMENT",
+      description:
+        "Deploy platforms and command capabilities that improve visibility, coordination, & performance.",
+    },
+    {
+      title: "CAPACITY + CAPITAL ALIGNMENT",
+      description:
+        "Build local capability and align funding pathways to long-term sustainment.",
+    },
+  ];
+
+  return (
+    <section className="bg-[#F3F2F2] py-16 md:py-20">
+      <div className="max-w-7xl mx-auto px-8 sm:px-14 xl:px-20">
+
+        {/* Heading */}
+        <h2 className="text-xl md:text-4xl xl:text-3xl font-bold text-[#0d1f35] uppercase tracking-tight mb-14">
+          What PGP Delivers
+        </h2>
+
+        {/* Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-3">
+          {items.map((item, index) => (
+            <div
+              key={index}
+              className={`py-4 md:py-0 ${
+                index !== 2
+                  ? "border-b md:border-b-0 md:border-r border-gray-300 md:pr-12"
+                  : ""
+              } ${index !== 0 ? "md:pl-12" : ""}`}
+            >
+              <h3 className="text-[0.75rem] font-bold text-[#0d1f35] uppercase tracking-[0.12em] leading-snug mb-4">
+                {item.title}
+              </h3>
+
+              <p className="text-[#555555] text-sm leading-relaxed">
+                {item.description}
+              </p>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </section>
+  );
+}
