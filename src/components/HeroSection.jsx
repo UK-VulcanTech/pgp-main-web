@@ -2,26 +2,28 @@ import heroBg from "../assets/images/hero-bg.png";
 
 export default function HeroSection() {
   return (
-    <section className="w-full min-h-screen flex flex-col lg:flex-row bg-[#F3F2F2] overflow-hidden">
-
+    <section className="w-full min-h-[calc(100vh-64px)] flex flex-col lg:flex-row bg-[#F3F2F2] overflow-hidden">
       {/* LEFT — Text Content */}
-      <div className="w-full lg:w-[52%] flex items-center px-10 sm:px-16 xl:px-20 py-16 lg:py-0">
-        <div className="w-full max-w-130">
-
+      <div className="w-full lg:w-[52%] flex items-start px-6 sm:px-10 lg:px-12 pt-14 lg:pt-14 pb-8 lg:pb-0">
+        <div className="w-full max-w-130 pl-14">
           {/* Label */}
-          <p className="text-[10px] font-semibold tracking-[0.28em] uppercase text-gray-400 mb-4">
+          <p className="text-[10px] font-regular tracking-[0.28em] uppercase text-gray-400 mb-4">
             Peak Global Partners
           </p>
 
           {/* Heading */}
           <h1
-            className="font-black text-[#1B2A3B] uppercase leading-[1.06]"
+            className="font-black text-primary uppercase leading-[1.06]"
             style={{ fontSize: "clamp(2.4rem, 4vw, 3.6rem)" }}
           >
-            Full-Service<br />
-            Technology<br />
-            Services For<br />
-            High&#8209;Impact<br />
+            Full-Service
+            <br />
+            Technology
+            <br />
+            Services For
+            <br />
+            High&#8209;Impact
+            <br />
             Partnerships
           </h1>
 
@@ -35,18 +37,13 @@ export default function HeroSection() {
 
           {/* Buttons */}
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <button
-              className="px-7 py-3.25 bg-[#0d1f35] text-white text-[10px] font-bold tracking-[0.22em] uppercase hover:bg-[#1a3c5e] transition-colors duration-200 whitespace-nowrap"
-            >
+            <button className="px-7 py-3.25 bg-[#0d1f35] text-white text-[10px] font-bold tracking-[0.22em] uppercase hover:bg-[#1a3c5e] transition-colors duration-200 whitespace-nowrap">
               Explore Solutions
             </button>
-            <button
-              className="px-7 py-3.25 border border-[#0d1f35] text-[#0d1f35] text-[10px] font-bold tracking-[0.22em] uppercase hover:bg-[#0d1f35] hover:text-white transition-colors duration-200 whitespace-nowrap"
-            >
+            <button className="px-7 py-3.25 border border-[#0d1f35] text-[#0d1f35] text-[10px] font-bold tracking-[0.22em] uppercase hover:bg-[#0d1f35] hover:text-white transition-colors duration-200 whitespace-nowrap">
               Talk to Our Team
             </button>
           </div>
-
         </div>
       </div>
 
@@ -58,7 +55,6 @@ export default function HeroSection() {
           className="w-full h-full object-cover object-center"
         />
       </div>
-
     </section>
   );
 }

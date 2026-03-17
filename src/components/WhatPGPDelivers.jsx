@@ -18,11 +18,11 @@ export default function WhatPGPDelivers() {
   ];
 
   return (
-    <section className="bg-[#F3F2F2] py-16 md:py-20">
-      <div className="max-w-7xl mx-auto px-8 sm:px-14 xl:px-20">
+    <section className="bg-[#F3F2F2] px-12 py-16 md:py-20 ">
+      <div className="max-w-full mx-auto px-8 sm:px-14 ">
 
         {/* Heading */}
-        <h2 className="text-xl md:text-4xl xl:text-3xl font-bold text-[#0d1f35] uppercase tracking-tight mb-14">
+        <h2 className="text-xl md:text-4xl xl:text-5xl font-bold text-[#0d1f35] uppercase tracking-tight mb-14">
           What PGP Delivers
         </h2>
 
