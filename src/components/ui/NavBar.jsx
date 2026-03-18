@@ -82,7 +82,7 @@ export default function NavBar() {
   //   }`;
 
   const navLinkClass =
-    "text-base font-semibold text-primary py-2 cursor-default";
+    "text-sm xl:text-base font-semibold text-primary py-2 cursor-default whitespace-nowrap";
 
   return (
     <nav className="sticky top-0 z-40 bg-secondary">
@@ -102,7 +102,7 @@ export default function NavBar() {
           {/* </Link> */}
 
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-5 xl:gap-6 2xl:gap-8 ml-auto">
+          <div className="hidden lg:flex items-center gap-3 xl:gap-5 2xl:gap-8 ml-auto">
             {" "}
             {/* <NavLink to="/" end className={navLinkClass}>Home</NavLink> */}
             <span className={navLinkClass}>Home</span>

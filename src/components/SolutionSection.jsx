@@ -3,10 +3,10 @@ import { solutions } from "../data/Solutions";
 
 const SolutionsSection = () => {
   return (
-    <section className="bg-[#1E2F3F] py-24">
+    <section className="bg-[#1E2F3F] py-24 px-6">
       
       {/* Container */}
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-full mx-auto px-20">
         
         {/* Title */}
         <h2 className="text-white text-4xl font-semibold tracking-wide mb-12">

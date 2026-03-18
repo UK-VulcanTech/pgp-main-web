@@ -1,123 +1,75 @@
-import {
-  FaLightbulb,
-  FaClipboardList,
-  FaRocket,
-  FaSyncAlt,
-} from "react-icons/fa";
+import Curve from "../assets/icons/curve.svg";
+import BulbIcon from "../assets/icons/bulb-charging.png";
+import WebDesignIcon from "../assets/icons/web-design.png";
+import RocketIcon from "../assets/icons/rocket-01.png";
+import RefreshIcon from "../assets/icons/refresh-04.png";
 
-const HexIcon = ({ children }) => (
+const HexIcon = ({ src, alt }) => (
   <div
-    className="relative flex items-center justify-center"
-    style={{ width: 54, height: 54 }}
+    className="flex items-center justify-center w-10 h-10 bg-white"
+    style={{
+      clipPath:
+        "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+      boxShadow: "0px 4px 4px 0px #3A5DB754",
+    }}
   >
-    <div
-      className="absolute inset-0 bg-primary"
-      style={{
-        clipPath:
-          "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-      }}
-    />
-    <div
-      className="absolute bg-white flex items-center justify-center text-primary"
-      style={{
-        width: 46,
-        height: 46,
-        clipPath:
-          "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-      }}
-    >
-      {children}
-    </div>
+    <img src={src} alt={alt} className="w-5 h-5 object-contain" />
   </div>
 );
 
-const StepLabel = ({ number, title, desc }) => (
-  <div className="relative" style={{ paddingRight: 10 }}>
+const StepLabel = ({ number, title, desc, align = "left" }) => (
+  <div
+    className={`relative max-w-[180px] ${
+      align === "center"
+        ? "text-center"
+        : align === "right"
+        ? "text-right"
+        : "text-left"
+    }`}
+  >
     <span
-      className="absolute text-[110px] font-black text-gray-200 leading-none select-none"
-      style={{ right: -24, top: -18, zIndex: 0 }}
+      className="absolute text-[90px] md:text-[110px] font-black leading-none -top-5 -right-4 select-none"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(0, 0, 0, 0.3) -37.71%, rgba(102, 102, 102, 0) 110.83%)",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        backgroundClip: "text",
+      }}
     >
       {number}
     </span>
-    <h3
-      className="relative font-bold text-gray-800 text-lg leading-tight"
-      style={{ zIndex: 1 }}
-    >
+    <h3 className="relative z-10 font-bold text-gray-800 text-base md:text-lg">
       {title}
     </h3>
-    <p
-      className="relative text-sm text-gray-500 mt-1 leading-relaxed"
-      style={{ zIndex: 1 }}
-    >
-      {desc}
-    </p>
+    <p className="relative z-10 text-sm text-gray-500 mt-1">{desc}</p>
   </div>
 );
 
 const HowWeWork = () => {
   return (
-    <section className="bg-[#EFEFEF] py-20 relative overflow-hidden">
+    <section className="bg-[#EFEFEF] py-16 md:py-20">
       {/* Title */}
-      <div className="text-center mb-16">
-        <h2 className="text-4xl font-black tracking-widest text-gray-800 uppercase">
+      <div className="text-center mb-12 md:mb-16">
+        <h2 className="text-3xl md:text-4xl font-black tracking-widest text-gray-800 uppercase">
           How We Work
         </h2>
       </div>
 
-      {/* Desktop diagram */}
-      <div
-        className="hidden md:block relative mx-auto"
-        style={{
-          maxWidth: 1100,
-          height: 480,
-          paddingLeft: 20,
-          paddingRight: 20,
-        }}
-      >
-        {/* Wave SVG */}
-        <svg
-          className="absolute inset-0 w-full h-full pointer-events-none"
-          viewBox="0 0 1100 480"
-          preserveAspectRatio="xMidYMid meet"
-          fill="none"
-        >
-          {/* Gradient Definition */}
-          <defs>
-            <linearGradient
-              id="curveGradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="0%"
-            >
-              <stop offset="0%" stopColor="#141F53" />
-              <stop offset="100%" stopColor="#2D45B9" />
-            </linearGradient>
-          </defs>
+      {/* Desktop */}
+      <div className="hidden md:block relative mx-auto max-w-6xl aspect-[2.3/1]">
+        {/* Curve */}
+        <img
+          src={Curve}
+          alt="curve"
+          className="absolute inset-0 w-full h-full object-contain opacity-80"
+        />
 
-          {/* Path */}
-          <path
-            d="M 0,280 
-                C 150,340 300,340 400,260 
-                C 500,180 650,180 750,260 
-                C 850,340 1000,320 1100,220"
-            stroke="url(#curveGradient)"
-            strokeWidth="5"
-            strokeDasharray="10 8"
-            strokeLinecap="round"
-          />
-        </svg>
-
-        {/* ── Step 1: Define ── icon at (88, 262), label ABOVE */}
-        <div
-          className="absolute"
-          style={{ left: 88, top: 262, transform: "translate(-50%, -50%)" }}
-        >
-          <HexIcon>
-            <FaLightbulb size={18} />
-          </HexIcon>
+        {/* STEP 1 */}
+        <div className="absolute left-[10%] top-[65%] -translate-x-1/2 -translate-y-1/2">
+          <HexIcon src={BulbIcon} alt="Define" />
         </div>
-        <div className="absolute" style={{ left: 5, top: 72, width: 192 }}>
+        <div className="absolute left-[5%] top-[20%]">
           <StepLabel
             number="1"
             title="Define"
@@ -125,16 +77,11 @@ const HowWeWork = () => {
           />
         </div>
 
-        {/* ── Step 2: Design ── icon at (375, 328), label BELOW */}
-        <div
-          className="absolute"
-          style={{ left: 375, top: 328, transform: "translate(-50%, -50%)" }}
-        >
-          <HexIcon>
-            <FaClipboardList size={18} />
-          </HexIcon>
+        {/* STEP 2 */}
+        <div className="absolute left-[35%] top-[75%] -translate-x-1/2 -translate-y-1/2">
+          <HexIcon src={WebDesignIcon} alt="Design" />
         </div>
-        <div className="absolute" style={{ left: 302, top: 348, width: 185 }}>
+        <div className="absolute left-[28%] top-[78%]">
           <StepLabel
             number="2"
             title="Design"
@@ -142,16 +89,11 @@ const HowWeWork = () => {
           />
         </div>
 
-        {/* ── Step 3: Deliver ── icon at (688, 180), label ABOVE */}
-        <div
-          className="absolute"
-          style={{ left: 688, top: 180, transform: "translate(-50%, -50%)" }}
-        >
-          <HexIcon>
-            <FaRocket size={18} />
-          </HexIcon>
+        {/* STEP 3 */}
+        <div className="absolute left-[65%] top-[35%] -translate-x-1/2 -translate-y-1/2">
+          <HexIcon src={RocketIcon} alt="Deliver" />
         </div>
-        <div className="absolute" style={{ left: 555, top: 14, width: 185 }}>
+        <div className="absolute left-[55%] top-[5%]">
           <StepLabel
             number="3"
             title="Deliver"
@@ -159,16 +101,11 @@ const HowWeWork = () => {
           />
         </div>
 
-        {/* ── Step 4: Sustain ── icon at (968, 280), label BELOW */}
-        <div
-          className="absolute"
-          style={{ left: 968, top: 280, transform: "translate(-50%, -50%)" }}
-        >
-          <HexIcon>
-            <FaSyncAlt size={18} />
-          </HexIcon>
+        {/* STEP 4 */}
+        <div className="absolute left-[90%] top-[65%] -translate-x-1/2 -translate-y-1/2">
+          <HexIcon src={RefreshIcon} alt="Sustain" />
         </div>
-        <div className="absolute" style={{ left: 852, top: 300, width: 200 }}>
+        <div className="absolute left-[78%] top-[70%]">
           <StepLabel
             number="4"
             title="Sustain"
@@ -177,51 +114,28 @@ const HowWeWork = () => {
         </div>
       </div>
 
-      {/* Mobile layout */}
-      <div className="md:hidden max-w-sm mx-auto px-6 space-y-10 mt-4">
-        {[
-          {
-            num: "1",
-            title: "Define",
-            desc: "Align stakeholders, scope, and success measures",
-            icon: <FaLightbulb size={18} />,
-          },
-          {
-            num: "2",
-            title: "Design",
-            desc: "Build the roadmap, operating model, and delivery plan",
-            icon: <FaClipboardList size={18} />,
-          },
-          {
-            num: "3",
-            title: "Deliver",
-            desc: "Execute with governance, reporting, and performance controls",
-            icon: <FaRocket size={18} />,
-          },
-          {
-            num: "4",
-            title: "Sustain",
-            desc: "Transfer skills and establish lifecycle operations for continuity",
-            icon: <FaSyncAlt size={18} />,
-          },
-        ].map((step) => (
-          <div key={step.num} className="flex items-start gap-4">
-            <div className="shrink-0">
-              <HexIcon>{step.icon}</HexIcon>
-            </div>
-            <div>
-              <div className="flex items-baseline gap-2">
-                <h3 className="font-bold text-gray-800">{step.title}</h3>
-                <span className="text-3xl font-black text-gray-200 leading-none">
-                  {step.num}
-                </span>
-              </div>
-              <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                {step.desc}
-              </p>
-            </div>
-          </div>
-        ))}
+      {/* Mobile (clean stacked version) */}
+      <div className="md:hidden flex flex-col gap-10 px-6">
+        <StepLabel
+          number="1"
+          title="Define"
+          desc="Align stakeholders, scope, and success measures"
+        />
+        <StepLabel
+          number="2"
+          title="Design"
+          desc="Build the roadmap, operating model, and delivery plan"
+        />
+        <StepLabel
+          number="3"
+          title="Deliver"
+          desc="Execute with governance, reporting, and performance controls"
+        />
+        <StepLabel
+          number="4"
+          title="Sustain"
+          desc="Transfer skills and establish lifecycle operations for continuity"
+        />
       </div>
     </section>
   );

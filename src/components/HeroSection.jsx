@@ -2,7 +2,7 @@ import heroBg from "../assets/images/hero-bg.png";
 
 export default function HeroSection() {
   return (
-    <section className="w-full min-h-[calc(100vh-64px)] flex flex-col lg:flex-row bg-[#F3F2F2] overflow-hidden">
+    <section className="w-full lg:min-h-[calc(100vh-64px)] flex flex-col lg:flex-row bg-secondary overflow-hidden">
       {/* LEFT — Text Content */}
       <div className="w-full lg:w-[52%] flex items-start px-6 sm:px-10 lg:px-12 pt-14 lg:pt-14 pb-8 lg:pb-0">
         <div className="w-full max-w-130 pl-14">
