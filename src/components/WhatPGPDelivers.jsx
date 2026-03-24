@@ -37,11 +37,11 @@ export default function WhatPGPDelivers() {
                   : ""
               } ${index !== 0 ? "md:pl-12" : ""}`}
             >
-              <h3 className="text-[0.75rem] font-bold text-[#0d1f35] uppercase tracking-[0.12em] leading-snug mb-4">
+              <h3 className="text-2xl font-bold text-[#0d1f35] uppercase tracking-[0.12em] leading-snug mb-4">
                 {item.title}
               </h3>
 
-              <p className="text-[#555555] text-sm leading-relaxed">
+              <p className="text-[#666] text-lg font-regular leading-relaxed">
                 {item.description}
               </p>
             </div>
