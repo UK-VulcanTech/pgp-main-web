@@ -45,7 +45,7 @@ const steps = [
 
 const HowWeDeliver = () => {
   return (
-    <section className="bg-[var(--color-secondary)]  px-6 md:px-12 lg:px-20">
+    <section className="bg-[var(--color-secondary)]  pt-10 border-t border-[#2B2B2B33] ">
 
       {/* Top Label */}
       <div className="text-center mb-4">
@@ -71,7 +71,7 @@ const HowWeDeliver = () => {
             </span>
 
             {/* Content */}
-            <div className="relative">
+            <div className="relative pl-10">
 
               <h3 className="text-lg md:text-xl font-bold text-[var(--color-primary)] mb-4">
                 {step.title}
@@ -105,7 +105,7 @@ const HowWeDeliver = () => {
       </div>
 
       {/* CTA Section with Wave */}
-      <div className="relative mt-20 bg-[var(--color-primary)] py-16 px-6 rounded-t-3xl overflow-hidden">
+      <div className="relative mt-20 bg-[var(--color-primary)] py-16 px-6 overflow-hidden">
 
         {/* Wave Background */}
         <img
