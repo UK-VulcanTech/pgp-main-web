@@ -119,28 +119,31 @@ const solutionsRight = [
 ];
 
 const trainingLeft = [
-  { title: "Skills Transfer",          subtitle: "Knowledge sharing programs",     icon: <IcoArrows /> },
-  { title: "Technology Training",      subtitle: "Digital skills development",     icon: <IcoChip /> },
-  { title: "Police Forensics Training",subtitle: "Crime investigation techniques", icon: <IcoFingerprint /> },
+  { title: "Skills Transfer",          subtitle: "Knowledge sharing programs",     icon: <IcoArrows />,      path: "/training/skills-transfer" },
+  { title: "Technology Training",      subtitle: "Digital skills development",     icon: <IcoChip />,        path: "/training/technology-training" },
+  { title: "Police Forensics Training",subtitle: "Crime investigation techniques", icon: <IcoFingerprint />, path: "/training/police-forensics-training" },
 ];
 const trainingRight = [
-  { title: "Intelligence Training",  subtitle: "Strategic intelligence skills", icon: <IcoBrain /> },
-  { title: "Cybersecurity Training", subtitle: "Cyber threat defense",          icon: <IcoLock /> },
+  { title: "Intelligence Training",  subtitle: "Strategic intelligence skills", icon: <IcoBrain />, path: "/training/intelligence-training" },
+  { title: "Cybersecurity Training", subtitle: "Cyber threat defense",          icon: <IcoLock />,  path: "/training/cybersecurity-training" },
 ];
 
 /* ── DropdownItem ───────────────────────────────────────────────────── */
-function DropdownItem({ icon, title, subtitle, slug, onClose }) {
+function DropdownItem({ icon, title, subtitle, slug, path, onClose }) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (slug) navigate(`/solutions/${slug}`);
+    if (path) navigate(path);
+    else if (slug) navigate(`/solutions/${slug}`);
     if (onClose) onClose();
   };
+
+  const clickable = !!(path || slug);
 
   return (
     <div
       onClick={handleClick}
-      className={`flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-colors duration-150 ${slug ? "cursor-pointer" : "cursor-default"}`}
+      className={`flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-colors duration-150 ${clickable ? "cursor-pointer" : "cursor-default"}`}
     >
       <div className="shrink-0 w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center text-yellow-400">
         {icon}
@@ -210,7 +213,7 @@ export default function NavBar() {
   const closeAll = () => setOpenDropdown(null);
 
   const navLinkClass =
-    "text-sm xl:text-base font-semibold text-primary py-2 cursor-default whitespace-nowrap";
+    "text-sm xl:text-base font-semibold text-primary py-2 cursor-pointer whitespace-nowrap";
 
   return (
     <nav className="sticky top-0 z-40 bg-secondary">
@@ -246,7 +249,7 @@ export default function NavBar() {
               onClose={closeAll}
             />
 
-            <span className={navLinkClass}>Approach</span>
+            <Link to="/about#how-we-deliver" className={navLinkClass + " hover:opacity-75 transition-opacity duration-200"}>Approach</Link>
             <Link to="/impact" className={navLinkClass + " hover:opacity-75 transition-opacity duration-200"}>Impact</Link>
             <span className={navLinkClass}>Insights</span>
             <Link to="/contact" className="text-base font-semibold px-4 py-2 text-primary hover:opacity-75 transition-opacity duration-200 whitespace-nowrap">
@@ -277,11 +280,8 @@ export default function NavBar() {
           <div className="xl:hidden border-t border-gray-100 py-3 space-y-1">
             <Link to="/" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">Home</Link>
             <Link to="/about" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">About</Link>
-            {["Approach", "Insights"].map((label) => (
-              <span key={label} className="block px-3 py-2 text-sm font-medium text-gray-700 cursor-default">
-                {label}
-              </span>
-            ))}
+            <Link to="/about#how-we-deliver" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">Approach</Link>
+            <span className="block px-3 py-2 text-sm font-medium text-gray-700 cursor-default">Insights</span>
             <Link to="/impact" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">Impact</Link>
             <Link to="/contact" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">
               Contact
@@ -300,13 +300,13 @@ export default function NavBar() {
 
             <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Training & Skills Transfer</div>
             {[...trainingLeft, ...trainingRight].map((item) => (
-              <div key={item.title} className="flex items-center gap-3 px-6 py-2 text-gray-600 cursor-default">
+              <Link key={item.title} to={item.path} className="flex items-center gap-3 px-6 py-2 text-gray-600 hover:opacity-75">
                 <span className="text-yellow-500">{item.icon}</span>
                 <div>
                   <p className="text-sm font-medium">{item.title}</p>
                   <p className="text-xs text-gray-400">{item.subtitle}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

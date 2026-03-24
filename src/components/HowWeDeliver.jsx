@@ -45,7 +45,7 @@ const steps = [
 
 const HowWeDeliver = () => {
   return (
-    <section className="bg-[var(--color-secondary)]  pt-10 border-t border-[#2B2B2B33] ">
+    <section id="how-we-deliver" className="bg-[var(--color-secondary)]  pt-10 border-t border-[#2B2B2B33] ">
 
       {/* Top Label */}
       <div className="text-center mb-4">
