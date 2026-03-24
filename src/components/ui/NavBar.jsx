@@ -157,21 +157,33 @@ function DropdownItem({ icon, title, subtitle, slug, path, onClose }) {
 }
 
 /* ── Dropdown ───────────────────────────────────────────────────────── */
-function Dropdown({ label, leftItems, rightItems, panelWidth, isOpen, onToggle, onClose }) {
+function Dropdown({ label, linkTo, leftItems, rightItems, panelWidth, isOpen, onToggle, onClose }) {
+  const navigate = useNavigate();
+
   return (
     <div className="relative">
-      <button
-        onClick={onToggle}
-        className="flex items-center gap-1 text-base font-semibold text-primary hover:opacity-75 transition-opacity duration-200 py-2 whitespace-nowrap"
-      >
-        {label}
-        <svg
-          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+      <div className="flex items-center gap-1 py-2">
+        {/* Label — navigates to linkTo if provided */}
+        <span
+          onClick={() => { if (linkTo) { navigate(linkTo); onClose(); } else onToggle(); }}
+          className="text-base font-semibold text-primary hover:opacity-75 transition-opacity duration-200 whitespace-nowrap cursor-pointer"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+          {label}
+        </span>
+        {/* Chevron — always toggles dropdown */}
+        <button
+          onClick={onToggle}
+          className="text-primary hover:opacity-75 transition-opacity duration-200 cursor-pointer"
+          aria-label="Toggle dropdown"
+        >
+          <svg
+            className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
 
       {isOpen && (
         <>
@@ -241,6 +253,7 @@ export default function NavBar() {
             />
             <Dropdown
               label="Training & Skills Transfer"
+              linkTo="/training"
               leftItems={trainingLeft}
               rightItems={trainingRight}
               panelWidth="w-[520px]"
