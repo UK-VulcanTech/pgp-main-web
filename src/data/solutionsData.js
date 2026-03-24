@@ -155,4 +155,24 @@ export const solutionsData = {
       "Stronger funding pathways, improved project readiness, and aligned stakeholder commitments.",
     outcomeCta: "Align Capital to Execution",
   },
+
+  transportation: {
+    slug: "transportation",
+    heroLabel: "Our Solutions",
+    heroTitleBlack1: "Transportation Systems",
+    heroTitleBlack2: "That ",
+    heroTitleYellow: "Improve Mobility",
+    overviewText:
+      "PGP delivers transportation infrastructure improvements—from roads and ports to logistics networks—focused on increasing throughput, reliability, and long-term operational performance.",
+    deliverItems: [
+      { id: "01", text: "Road infrastructure improvement programs and delivery governance" },
+      { id: "02", text: "Port and logistics operations improvement and throughput optimization" },
+      { id: "03", text: "Operational readiness planning and performance monitoring approaches" },
+      { id: "04", text: "Technology enablement for logistics visibility and fleet management" },
+      { id: "05", text: "Workforce development to sustain infrastructure operations" },
+    ],
+    outcomeHeadline:
+      "Improved mobility, increased throughput, and stronger long-term operating performance.",
+    outcomeCta: "Improve Transportation Delivery",
+  },
 };

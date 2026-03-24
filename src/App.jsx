@@ -9,6 +9,8 @@ import AboutPage from "./pages/AboutPage";
 import SolutionPage from "./pages/SolutionPage";
 import ImpactPage from "./pages/ImpactPage";
 import TrainingDetailPage from "./pages/TrainingDetailPage";
+import TechSolutionPage from "./pages/TechSolutionPage";
+import TrainingAreasPage from "./pages/TrainingAreasPage";
 
 function App() {
   return (
@@ -19,8 +21,10 @@ function App() {
           <Route path="/" element={<Homepage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/solutions/technology" element={<TechSolutionPage />} />
           <Route path="/solutions/:slug" element={<SolutionPage />} />
           <Route path="/impact" element={<ImpactPage />} />
+          <Route path="/training" element={<TrainingAreasPage />} />
           <Route path="/training/:slug" element={<TrainingDetailPage />} />
         </Routes>
         <Footer />
