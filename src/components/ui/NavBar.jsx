@@ -247,7 +247,7 @@ export default function NavBar() {
             />
 
             <span className={navLinkClass}>Approach</span>
-            <span className={navLinkClass}>Impact</span>
+            <Link to="/impact" className={navLinkClass + " hover:opacity-75 transition-opacity duration-200"}>Impact</Link>
             <span className={navLinkClass}>Insights</span>
             <Link to="/contact" className="text-base font-semibold px-4 py-2 text-primary hover:opacity-75 transition-opacity duration-200 whitespace-nowrap">
               Contact
@@ -277,11 +277,12 @@ export default function NavBar() {
           <div className="xl:hidden border-t border-gray-100 py-3 space-y-1">
             <Link to="/" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">Home</Link>
             <Link to="/about" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">About</Link>
-            {["Approach", "Impact", "Insights"].map((label) => (
+            {["Approach", "Insights"].map((label) => (
               <span key={label} className="block px-3 py-2 text-sm font-medium text-gray-700 cursor-default">
                 {label}
               </span>
             ))}
+            <Link to="/impact" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">Impact</Link>
             <Link to="/contact" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">
               Contact
             </Link>

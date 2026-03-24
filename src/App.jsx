@@ -7,6 +7,7 @@ import Homepage from "./pages/Homepage";
 import ContactPage from "./pages/ContactPage";
 import AboutPage from "./pages/AboutPage";
 import SolutionPage from "./pages/SolutionPage";
+import ImpactPage from "./pages/ImpactPage";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/solutions/:slug" element={<SolutionPage />} />
+          <Route path="/impact" element={<ImpactPage />} />
         </Routes>
         <Footer />
       </Router>
