@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/images/logo.png";
 import header from "../../assets/images/header.png";
 
@@ -103,18 +104,18 @@ const IcoLock = () => (
 
 /* ── Data ───────────────────────────────────────────────────────────── */
 const solutionsLeft = [
-  { title: "Energy Infrastructure", subtitle: "Optimizing grid reliability",    icon: <IcoLightning /> },
-  { title: "Renewables",            subtitle: "Scalable green power",            icon: <IcoSun /> },
-  { title: "Agriculture",           subtitle: "Modernizing food chains",         icon: <IcoSeedling /> },
-  { title: "Technology",            subtitle: "Data-driven visibility",          icon: <IcoChip /> },
-  { title: "Healthcare",            subtitle: "Strengthening care access",       icon: <IcoHeart /> },
+  { title: "Energy Infrastructure", subtitle: "Optimizing grid reliability",    icon: <IcoLightning />, slug: "energy-infrastructure" },
+  { title: "Renewables",            subtitle: "Scalable green power",            icon: <IcoSun />,       slug: "renewables" },
+  { title: "Agriculture",           subtitle: "Modernizing food chains",         icon: <IcoSeedling />,  slug: "agriculture" },
+  { title: "Technology",            subtitle: "Data-driven visibility",          icon: <IcoChip />,      slug: "technology" },
+  { title: "Healthcare",            subtitle: "Strengthening care access",       icon: <IcoHeart />,     slug: "healthcare" },
 ];
 const solutionsRight = [
-  { title: "Waste & Recycling",  subtitle: "Modern environmental systems",    icon: <IcoRecycle /> },
-  { title: "Water & Sanitation", subtitle: "Sustainable lifecycle services",  icon: <IcoDrop /> },
-  { title: "Transportation",     subtitle: "Enhancing global mobility",       icon: <IcoTruck /> },
-  { title: "Real Estate",        subtitle: "High-impact asset development",   icon: <IcoBuilding /> },
-  { title: "Capital Access",     subtitle: "Connecting funding to execution", icon: <IcoWallet /> },
+  { title: "Waste & Recycling",  subtitle: "Modern environmental systems",    icon: <IcoRecycle />,  slug: "waste-recycling" },
+  { title: "Water & Sanitation", subtitle: "Sustainable lifecycle services",  icon: <IcoDrop />,     slug: "water-sanitation" },
+  { title: "Transportation",     subtitle: "Enhancing global mobility",       icon: <IcoTruck />,    slug: "transportation" },
+  { title: "Real Estate",        subtitle: "High-impact asset development",   icon: <IcoBuilding />, slug: "real-estate" },
+  { title: "Capital Access",     subtitle: "Connecting funding to execution", icon: <IcoWallet />,   slug: "capital-access" },
 ];
 
 const trainingLeft = [
@@ -128,9 +129,19 @@ const trainingRight = [
 ];
 
 /* ── DropdownItem ───────────────────────────────────────────────────── */
-function DropdownItem({ icon, title, subtitle }) {
+function DropdownItem({ icon, title, subtitle, slug, onClose }) {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (slug) navigate(`/solutions/${slug}`);
+    if (onClose) onClose();
+  };
+
   return (
-    <div className="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-white/5 cursor-pointer transition-colors duration-150">
+    <div
+      onClick={handleClick}
+      className={`flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-colors duration-150 ${slug ? "cursor-pointer" : "cursor-default"}`}
+    >
       <div className="shrink-0 w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center text-yellow-400">
         {icon}
       </div>
@@ -144,18 +155,8 @@ function DropdownItem({ icon, title, subtitle }) {
 
 /* ── Dropdown ───────────────────────────────────────────────────────── */
 function Dropdown({ label, leftItems, rightItems, panelWidth, isOpen, onToggle, onClose }) {
-  const ref = useRef(null);
-
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) onClose();
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
-
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative">
       <button
         onClick={onToggle}
         className="flex items-center gap-1 text-base font-semibold text-primary hover:opacity-75 transition-opacity duration-200 py-2 whitespace-nowrap"
@@ -170,25 +171,31 @@ function Dropdown({ label, leftItems, rightItems, panelWidth, isOpen, onToggle, 
       </button>
 
       {isOpen && (
-        <div
-          className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 ${panelWidth} bg-primary rounded-2xl shadow-2xl z-50`}
-        >
-          {/* Triangle pointer */}
-          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-primary rotate-45 rounded-sm" />
+        <>
+          {/* Backdrop — clicking outside closes the dropdown */}
+          <div className="fixed inset-0 z-40" onClick={onClose} />
 
-          <div className="grid grid-cols-2 gap-x-2 p-4">
-            <div>
-              {leftItems.map((item) => (
-                <DropdownItem key={item.title} {...item} />
-              ))}
-            </div>
-            <div>
-              {rightItems.map((item) => (
-                <DropdownItem key={item.title} {...item} />
-              ))}
+          {/* Panel — above backdrop */}
+          <div
+            className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 ${panelWidth} bg-primary rounded-2xl shadow-2xl z-50`}
+          >
+            {/* Triangle pointer */}
+            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-primary rotate-45 rounded-sm" />
+
+            <div className="grid grid-cols-2 gap-x-2 p-4">
+              <div>
+                {leftItems.map((item) => (
+                  <DropdownItem key={item.title} {...item} onClose={onClose} />
+                ))}
+              </div>
+              <div>
+                {rightItems.map((item) => (
+                  <DropdownItem key={item.title} {...item} onClose={onClose} />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
@@ -210,15 +217,15 @@ export default function NavBar() {
       <div className="max-w-675 mx-auto w-full px-4 sm:px-6 lg:px-12">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <span className="flex items-center gap-3 shrink-0">
+          <Link to="/" className="flex items-center gap-3 shrink-0">
             <img src={logo} alt="logo" className="h-10 w-auto" />
             <img src={header} alt="Peak Global Partners" className="h-5 mt-1 w-auto hidden sm:block" />
-          </span>
+          </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-3 xl:gap-5 2xl:gap-8 ml-auto">
-            <span className={navLinkClass}>Home</span>
-            <span className={navLinkClass}>About</span>
+          <div className="hidden xl:flex items-center gap-3 2xl:gap-8 ml-auto">
+            <Link to="/" className={navLinkClass + " hover:opacity-75 transition-opacity duration-200"}>Home</Link>
+            <Link to="/about" className={navLinkClass + " hover:opacity-75 transition-opacity duration-200"}>About</Link>
 
             <Dropdown
               label="Solutions"
@@ -242,14 +249,14 @@ export default function NavBar() {
             <span className={navLinkClass}>Approach</span>
             <span className={navLinkClass}>Impact</span>
             <span className={navLinkClass}>Insights</span>
-            <span className="text-base font-semibold px-4 py-2 text-primary cursor-default">
+            <Link to="/contact" className="text-base font-semibold px-4 py-2 text-primary hover:opacity-75 transition-opacity duration-200 whitespace-nowrap">
               Contact
-            </span>
+            </Link>
           </div>
 
           {/* Mobile hamburger */}
           <button
-            className="lg:hidden p-2 rounded-md text-gray-600 hover:text-[#1a3c5e] hover:bg-gray-100"
+            className="xl:hidden p-2 rounded-md text-gray-600 hover:text-[#1a3c5e] hover:bg-gray-100"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle menu"
           >
@@ -267,12 +274,17 @@ export default function NavBar() {
 
         {/* Mobile Menu */}
         {mobileOpen && (
-          <div className="lg:hidden border-t border-gray-100 py-3 space-y-1">
-            {["Home", "About", "Approach", "Impact", "Insights", "Contact"].map((label) => (
+          <div className="xl:hidden border-t border-gray-100 py-3 space-y-1">
+            <Link to="/" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">Home</Link>
+            <Link to="/about" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">About</Link>
+            {["Approach", "Impact", "Insights"].map((label) => (
               <span key={label} className="block px-3 py-2 text-sm font-medium text-gray-700 cursor-default">
                 {label}
               </span>
             ))}
+            <Link to="/contact" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:opacity-75">
+              Contact
+            </Link>
 
             <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Solutions</div>
             {[...solutionsLeft, ...solutionsRight].map((item) => (
