@@ -1,6 +1,9 @@
 # staging.peakglobalpartners.com — single domain:
 #   /      → main_web dist    |  /cms/ → cms-admin dist  |  /api/ → Django  |  /media/ → files
 #
+# Backend on VPS: deploy/vps-git-sync.sh clones or pulls the same GitHub repo into dirname(VPS_BACKEND_PROJECT_ROOT).
+# Private repos: set secret GIT_CLONE_TOKEN (PAT with repo read). Do not mkdir VPS_BACKEND_PROJECT_ROOT before clone.
+#
 # First-time VPS: set GitHub Variable VPS_BOOTSTRAP=true (once), add CERTBOT_EMAIL secret.
 # DNS for STAGING_DOMAIN must point at the server before the first run (Let's Encrypt HTTP-01).
 #
@@ -57,7 +60,7 @@ jobs:
       - name: Install rsync + sshpass
         run: sudo apt-get update -qq && sudo apt-get install -qq -y rsync sshpass
 
-      - name: Ensure remote directories exist (fixes scp .env "No such file or directory")
+      - name: Ensure remote directories exist (web root only; repo root is created by git clone)
         env:
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
@@ -65,13 +68,41 @@ jobs:
           U="${{ secrets.VPS_USER }}"
           H="${{ secrets.VPS_HOST }}"
           ROOT="${{ vars.VPS_REMOTE_WEB_ROOT }}"
-          ENV_PATH="${{ vars.VPS_BACKEND_ENV_PATH }}"
           BACK_ROOT="${{ vars.VPS_BACKEND_PROJECT_ROOT }}"
           sshpass -e ssh -o StrictHostKeyChecking=accept-new "$U@$H" \
             "set -euo pipefail
-            mkdir -p \"\$(dirname '${ENV_PATH}')\" '${BACK_ROOT}' '${BACK_ROOT}/media'
+            REPO_ROOT=\$(dirname '${BACK_ROOT}')
+            mkdir -p \"\$(dirname \"\$REPO_ROOT\")\"
             sudo mkdir -p '${ROOT}' '${ROOT}/cms'
             sudo chown -R '${U}:${U}' '${ROOT}' || true"
+
+      - name: Git clone or pull on VPS
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+          GIT_CLONE_TOKEN: ${{ secrets.GIT_CLONE_TOKEN }}
+        run: |
+          set -euo pipefail
+          U="${{ secrets.VPS_USER }}"
+          H="${{ secrets.VPS_HOST }}"
+          BACK_ROOT="${{ vars.VPS_BACKEND_PROJECT_ROOT }}"
+          BRANCH="${{ vars.VPS_GIT_BRANCH || github.ref_name }}"
+          REPO="${{ github.repository }}"
+          CUSTOM_URL="${{ vars.VPS_GIT_REPO_URL }}"
+          if [ -n "$CUSTOM_URL" ]; then
+            CLONE_URL="$CUSTOM_URL"
+          elif [ -n "${GIT_CLONE_TOKEN:-}" ]; then
+            CLONE_URL="https://x-access-token:${GIT_CLONE_TOKEN}@github.com/${REPO}.git"
+          else
+            CLONE_URL="https://github.com/${REPO}.git"
+          fi
+          sshpass -e scp -o StrictHostKeyChecking=accept-new \
+            deploy/vps-git-sync.sh "$U@$H:/tmp/vps-git-sync.sh"
+          sshpass -e ssh -o StrictHostKeyChecking=accept-new "$U@$H" \
+            "chmod +x /tmp/vps-git-sync.sh && \
+              BACK_ROOT=$(printf '%q' "$BACK_ROOT") \
+              BRANCH=$(printf '%q' "$BRANCH") \
+              CLONE_URL=$(printf '%q' "$CLONE_URL") \
+              /tmp/vps-git-sync.sh"
 
       - name: VPS bootstrap — apt, ufw, Let's Encrypt, base dirs (run once)
         if: ${{ vars.VPS_BOOTSTRAP == 'true' }}
