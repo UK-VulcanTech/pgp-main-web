@@ -26,15 +26,11 @@ function Private({ children }) {
   return children;
 }
 
-function routerBasename() {
-  const url = import.meta.env.BASE_URL || "/";
-  if (url === "/") return undefined;
-  return url.replace(/\/$/, "") || undefined;
-}
-
 export default function App() {
+  const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, "") || undefined;
+
   return (
-    <BrowserRouter basename={routerBasename()}>
+    <BrowserRouter basename={routerBasename}>
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
