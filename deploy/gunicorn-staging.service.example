@@ -1,0 +1,25 @@
+# Copy to /etc/systemd/system/gunicorn-staging.service (adjust paths and user).
+# Then: sudo systemctl daemon-reload && sudo systemctl enable --now gunicorn-staging
+#
+# Match nginx upstream in deploy/nginx-staging.conf.template (127.0.0.1:8000).
+
+[Unit]
+Description=PGP Django API (staging) — gunicorn
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/pgp-main-web/backend
+EnvironmentFile=/home/deploy/pgp-main-web/backend/.env
+ExecStart=/home/deploy/pgp-main-web/backend/.venv/bin/gunicorn \
+  --bind 127.0.0.1:8000 \
+  --workers 3 \
+  --timeout 120 \
+  config.wsgi:application
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
