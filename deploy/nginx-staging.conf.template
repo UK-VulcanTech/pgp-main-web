@@ -1,0 +1,50 @@
+# Render in CI: replace __STAGING_DOMAIN__, __NGINX_ROOT__, __NGINX_MEDIA_ROOT__
+
+upstream django_staging {
+    server 127.0.0.1:8000;
+    keepalive 8;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name __STAGING_DOMAIN__;
+
+    ssl_certificate     /etc/letsencrypt/live/__STAGING_DOMAIN__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__STAGING_DOMAIN__/privkey.pem;
+
+    root __NGINX_ROOT__;
+    index index.html;
+
+    client_max_body_size 25M;
+
+    location /api/ {
+        proxy_pass http://django_staging;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /media/ {
+        alias __NGINX_MEDIA_ROOT__/;
+    }
+
+    location = /cms {
+        return 301 /cms/;
+    }
+
+    location /cms/ {
+        try_files $uri $uri/ /cms/index.html;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+
+server {
+    listen 80;
+    server_name __STAGING_DOMAIN__;
+    return 301 https://$host$request_uri;
+}

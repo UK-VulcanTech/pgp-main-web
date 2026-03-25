@@ -1,11 +1,10 @@
-# Single domain: https://staging.peakglobalpartners.com
-#   /           → main_web (static build only)
-#   /cms/       → cms-admin (static build only; Vite base /cms/)
-#   /api/       → Django (gunicorn/uwsgi on VPS; not built here)
-#   /media/     → Django media (nginx → filesystem)
+# staging.peakglobalpartners.com — single domain:
+#   /      → main_web dist    |  /cms/ → cms-admin dist  |  /api/ → Django  |  /media/ → files
 #
-# This workflow only builds frontends and rsyncs dist/. Backend runs on the VPS separately.
-# See GITHUB_STAGING_ENV.md for exact GitHub Secrets / Variables.
+# First-time VPS: set GitHub Variable VPS_BOOTSTRAP=true (once), add CERTBOT_EMAIL secret.
+# DNS for STAGING_DOMAIN must point at the server before the first run (Let's Encrypt HTTP-01).
+#
+# See GITHUB_STAGING_ENV.md
 
 name: Deploy staging to VPS
 
@@ -21,6 +20,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      STAGING_DOMAIN: ${{ vars.STAGING_DOMAIN || 'staging.peakglobalpartners.com' }}
 
     steps:
       - name: Checkout
@@ -35,14 +36,12 @@ jobs:
             main_web/package-lock.json
             cms-admin/package-lock.json
 
-      # Same-origin API: browser calls https://staging.../api/... (nginx → Django)
       - name: Install & build main_web
         working-directory: main_web
         run: |
           npm ci
           npm run build
         env:
-          # Leave unset or empty for same-origin /api/public/v1 on staging.peakglobalpartners.com
           VITE_PUBLIC_API_URL: ${{ vars.MAIN_WEB_VITE_PUBLIC_API_URL }}
           VITE_PROXY_API: ""
 
@@ -52,13 +51,71 @@ jobs:
           npm ci
           npm run build
         env:
-          # Empty = same origin; or https://staging.peakglobalpartners.com (no trailing slash)
           VITE_API_BASE: ${{ vars.CMS_ADMIN_VITE_API_BASE }}
-          # Must match nginx location; default /cms/ for this deployment layout
           VITE_BASE_PATH: ${{ vars.CMS_ADMIN_VITE_BASE_PATH || '/cms/' }}
 
       - name: Install rsync + sshpass
         run: sudo apt-get update -qq && sudo apt-get install -qq -y rsync sshpass
+
+      - name: Ensure remote directories exist (fixes scp .env "No such file or directory")
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          set -euo pipefail
+          U="${{ secrets.VPS_USER }}"
+          H="${{ secrets.VPS_HOST }}"
+          ROOT="${{ vars.VPS_REMOTE_WEB_ROOT }}"
+          ENV_PATH="${{ vars.VPS_BACKEND_ENV_PATH }}"
+          BACK_ROOT="${{ vars.VPS_BACKEND_PROJECT_ROOT }}"
+          sshpass -e ssh -o StrictHostKeyChecking=accept-new "$U@$H" \
+            "set -euo pipefail
+            mkdir -p \"\$(dirname '${ENV_PATH}')\" '${BACK_ROOT}' '${BACK_ROOT}/media'
+            sudo mkdir -p '${ROOT}' '${ROOT}/cms'
+            sudo chown -R '${U}:${U}' '${ROOT}' || true"
+
+      - name: VPS bootstrap — apt, ufw, Let's Encrypt, base dirs (run once)
+        if: ${{ vars.VPS_BOOTSTRAP == 'true' }}
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          set -euo pipefail
+          U="${{ secrets.VPS_USER }}"
+          H="${{ secrets.VPS_HOST }}"
+          export STAGING_DOMAIN="${{ env.STAGING_DOMAIN }}"
+          export CERTBOT_EMAIL="${{ secrets.CERTBOT_EMAIL }}"
+          export WEB_ROOT="${{ vars.VPS_REMOTE_WEB_ROOT }}"
+          export BACKEND_ROOT="${{ vars.VPS_BACKEND_PROJECT_ROOT }}"
+          if [ -z "${CERTBOT_EMAIL:-}" ]; then
+            echo "CERTBOT_EMAIL secret is required when VPS_BOOTSTRAP=true"
+            exit 1
+          fi
+          sshpass -e scp -o StrictHostKeyChecking=accept-new \
+            deploy/vps-bootstrap-remote.sh "$U@$H:/tmp/vps-bootstrap-remote.sh"
+          sshpass -e ssh -o StrictHostKeyChecking=accept-new "$U@$H" \
+            "chmod +x /tmp/vps-bootstrap-remote.sh && STAGING_DOMAIN='$STAGING_DOMAIN' CERTBOT_EMAIL='$CERTBOT_EMAIL' WEB_ROOT='$WEB_ROOT' BACKEND_ROOT='$BACKEND_ROOT' /tmp/vps-bootstrap-remote.sh"
+
+      - name: Install / update nginx site (SSL + proxy)
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          set -euo pipefail
+          U="${{ secrets.VPS_USER }}"
+          H="${{ secrets.VPS_HOST }}"
+          ROOT="${{ vars.VPS_REMOTE_WEB_ROOT }}"
+          MED="${{ vars.VPS_BACKEND_PROJECT_ROOT }}/media"
+          DOM="${{ env.STAGING_DOMAIN }}"
+          sed -e "s|__STAGING_DOMAIN__|${DOM}|g" \
+              -e "s|__NGINX_ROOT__|${ROOT}|g" \
+              -e "s|__NGINX_MEDIA_ROOT__|${MED}|g" \
+            deploy/nginx-staging.conf.template > /tmp/pgp-nginx.conf
+          sshpass -e scp -o StrictHostKeyChecking=accept-new /tmp/pgp-nginx.conf "$U@$H:/tmp/pgp-nginx.conf"
+          sshpass -e ssh -o StrictHostKeyChecking=accept-new "$U@$H" "set -euo pipefail
+            SITE=/etc/nginx/sites-available/pgp-staging.conf
+            sudo mv /tmp/pgp-nginx.conf \"\$SITE\"
+            sudo rm -f /etc/nginx/sites-enabled/default
+            sudo ln -sf \"\$SITE\" /etc/nginx/sites-enabled/pgp-staging.conf
+            sudo nginx -t
+            sudo systemctl reload nginx"
 
       - name: Rsync main_web dist → VPS (site root)
         env:
