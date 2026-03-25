@@ -1,7 +1,9 @@
 import { FaFacebookF, FaGooglePlusG, FaInstagram, FaYoutube, FaMapMarkerAlt, FaEnvelope, FaPhone } from "react-icons/fa";
 import logo from "../../assets/images/logo.png";
+import { useNavigate } from "react-router-dom";
 
 export default function Footer() {
+  const navigation = useNavigate();
   return (
     <footer className="bg-gray-100 text-gray-700">
       <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -39,11 +41,11 @@ export default function Footer() {
         <div>
           <h3 className="font-semibold text-lg mb-4">Quick Links</h3>
           <ul className="space-y-3 text-sm">
-            <li className="hover:text-black cursor-pointer">Home</li>
+            <li onClick={()=>navigation('/')} className="hover:text-black cursor-pointer">Home</li>
             <li className="hover:text-black cursor-pointer">Our Solutions</li>
             <li className="hover:text-black cursor-pointer">Capabilities</li>
             <li className="hover:text-black cursor-pointer">Partnership Model</li>
-            <li className="hover:text-black cursor-pointer">Contact Us</li>
+            <li onClick={()=>navigation('/contact')} className="hover:text-black cursor-pointer">Contact Us</li>
           </ul>
         </div>
 
