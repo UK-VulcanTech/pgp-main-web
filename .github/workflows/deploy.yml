@@ -80,8 +80,13 @@ jobs:
         env:
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
           GIT_CLONE_TOKEN: ${{ secrets.GIT_CLONE_TOKEN }}
+          REPO_PRIVATE: ${{ github.event.repository.private }}
         run: |
           set -euo pipefail
+          if [ "${REPO_PRIVATE:-}" = "true" ] && [ -z "${GIT_CLONE_TOKEN:-}" ]; then
+            echo "::error::Private repo: add Actions secret GIT_CLONE_TOKEN (PAT with read access to code). See GITHUB_STAGING_ENV.md."
+            exit 1
+          fi
           U="${{ secrets.VPS_USER }}"
           H="${{ secrets.VPS_HOST }}"
           BACK_ROOT="${{ vars.VPS_BACKEND_PROJECT_ROOT }}"
