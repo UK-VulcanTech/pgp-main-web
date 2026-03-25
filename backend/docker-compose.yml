@@ -1,0 +1,24 @@
+# Example stack: API + SQLite volume + media volume.
+# For production prefer PostgreSQL (set DATABASE_URL) and a secrets manager for SECRET_KEY.
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      DATABASE_URL: sqlite:////app/db/db.sqlite3
+      ALLOWED_HOSTS: localhost,127.0.0.1,api
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5174}
+    volumes:
+      - pgpcms-db:/app/db
+      - pgpcms-media:/app/media
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+
+volumes:
+  pgpcms-db:
+  pgpcms-media:

@@ -1,32 +1,114 @@
-name: Deploy React Vite to VPS
+# Single domain: https://staging.peakglobalpartners.com
+#   /           → main_web (static build only)
+#   /cms/       → cms-admin (static build only; Vite base /cms/)
+#   /api/       → Django (gunicorn/uwsgi on VPS; not built here)
+#   /media/     → Django media (nginx → filesystem)
+#
+# This workflow only builds frontends and rsyncs dist/. Backend runs on the VPS separately.
+# See GITHUB_STAGING_ENV.md for exact GitHub Secrets / Variables.
+
+name: Deploy staging to VPS
 
 on:
   push:
     branches:
       - main
 
+concurrency:
+  group: deploy-staging-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            main_web/package-lock.json
+            cms-admin/package-lock.json
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Project
-        run: npm run build
-
-      - name: Install sshpass
-        run: sudo apt-get update && sudo apt-get install sshpass -y
-
-      - name: Deploy to VPS
+      # Same-origin API: browser calls https://staging.../api/... (nginx → Django)
+      - name: Install & build main_web
+        working-directory: main_web
         run: |
-          sshpass -p "${{ secrets.VPS_PASSWORD }}" scp -o StrictHostKeyChecking=no -r dist/* ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}
+          npm ci
+          npm run build
+        env:
+          # Leave unset or empty for same-origin /api/public/v1 on staging.peakglobalpartners.com
+          VITE_PUBLIC_API_URL: ${{ vars.MAIN_WEB_VITE_PUBLIC_API_URL }}
+          VITE_PROXY_API: ""
+
+      - name: Install & build cms-admin
+        working-directory: cms-admin
+        run: |
+          npm ci
+          npm run build
+        env:
+          # Empty = same origin; or https://staging.peakglobalpartners.com (no trailing slash)
+          VITE_API_BASE: ${{ vars.CMS_ADMIN_VITE_API_BASE }}
+          # Must match nginx location; default /cms/ for this deployment layout
+          VITE_BASE_PATH: ${{ vars.CMS_ADMIN_VITE_BASE_PATH || '/cms/' }}
+
+      - name: Install rsync + sshpass
+        run: sudo apt-get update -qq && sudo apt-get install -qq -y rsync sshpass
+
+      - name: Rsync main_web dist → VPS (site root)
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          set -euo pipefail
+          ROOT="${{ vars.VPS_REMOTE_WEB_ROOT }}"
+          REMOTE="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${ROOT}/"
+          sshpass -e rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=accept-new" \
+            main_web/dist/ "$REMOTE"
+
+      - name: Rsync cms-admin dist → VPS /cms/
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          set -euo pipefail
+          ROOT="${{ vars.VPS_REMOTE_WEB_ROOT }}"
+          REMOTE="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${ROOT}/cms/"
+          sshpass -e rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=accept-new" \
+            cms-admin/dist/ "$REMOTE"
+
+      - name: Upload backend .env to VPS
+        if: ${{ vars.SYNC_BACKEND_ENV_TO_VPS == 'true' }}
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          set -euo pipefail
+          REMOTE="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          TARGET="${{ vars.VPS_BACKEND_ENV_PATH }}"
+          {
+            echo "DEBUG=${{ vars.BACKEND_DEBUG || 'False' }}"
+            echo "SECRET_KEY=${{ secrets.BACKEND_SECRET_KEY }}"
+            echo "ALLOWED_HOSTS=${{ vars.BACKEND_ALLOWED_HOSTS }}"
+            echo "CORS_ALLOWED_ORIGINS=${{ vars.BACKEND_CORS_ALLOWED_ORIGINS }}"
+            echo "DATABASE_URL=${{ secrets.BACKEND_DATABASE_URL }}"
+            echo "JWT_ACCESS_MINUTES=${{ vars.BACKEND_JWT_ACCESS_MINUTES || '30' }}"
+            echo "JWT_REFRESH_DAYS=${{ vars.BACKEND_JWT_REFRESH_DAYS || '7' }}"
+            echo "SECURE_SSL_REDIRECT=${{ vars.BACKEND_SECURE_SSL_REDIRECT || 'True' }}"
+            echo "SECURE_HSTS_SECONDS=${{ vars.BACKEND_SECURE_HSTS_SECONDS || '31536000' }}"
+          } > /tmp/backend.env.remote
+          sshpass -e scp -o StrictHostKeyChecking=accept-new \
+            /tmp/backend.env.remote "$REMOTE:$TARGET"
+
+      - name: Restart backend (optional)
+        if: ${{ vars.VPS_BACKEND_RESTART_CMD != '' }}
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "${{ vars.VPS_BACKEND_RESTART_CMD }}"
