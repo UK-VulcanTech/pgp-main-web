@@ -4,9 +4,9 @@
 set -euo pipefail
 
 STAGING_DOMAIN="${STAGING_DOMAIN:-staging.peakglobalpartners.com}"
-: "${CERTBOT_EMAIL:?Set CERTBOT_EMAIL (Let's Encrypt)"}"
-: "${WEB_ROOT:?Set WEB_ROOT (nginx root, e.g. /var/www/staging.peakglobalpartners.com)}"
-: "${BACKEND_ROOT:?Set BACKEND_ROOT (Django backend dir for media), e.g. /home/deploy/pgp-main-web/backend}"
+: "${CERTBOT_EMAIL:?CERTBOT_EMAIL must be set for certbot}"
+: "${WEB_ROOT:?WEB_ROOT must be set to nginx document root path}"
+: "${BACKEND_ROOT:?BACKEND_ROOT must be set to Django backend directory}"
 
 echo "==> APT: nginx, certbot, ufw, rsync"
 sudo apt-get update -qq
