@@ -35,3 +35,7 @@ cms-admin/.env.*.local
 
 # CMS admin build (optional local)
 cms-admin/dist/
+
+# Reference design drop (not part of the React app)
+Peak Global Partners 4.0/
+Peak Global Partners 4.0.zip

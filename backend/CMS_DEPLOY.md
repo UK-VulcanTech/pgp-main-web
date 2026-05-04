@@ -1,5 +1,7 @@
 # PGP Django CMS — deploy & operate
 
+**VPS (manual, no GitHub secrets, Vite live):** see repo root **`VPS_MANUAL_DEPLOY.md`**.
+
 ## What ships
 
 - **`backend/`** — Django 4.2 + DRF + SimpleJWT + CORS + WhiteNoise + Gunicorn.
@@ -29,7 +31,7 @@ python manage.py runserver 8000
 ```bash
 cd cms-admin
 npm install
-npm run dev    # http://localhost:5174 — proxies /api → Django :8000
+npm run dev    # http://localhost:5174 — proxies /api → Django :8000 (set VITE_BASE_PATH in .env if using /cms/)
 ```
 
 Open `/login`, sign in with a **staff** account.

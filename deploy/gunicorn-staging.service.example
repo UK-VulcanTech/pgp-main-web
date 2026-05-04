@@ -9,11 +9,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=deploy
-Group=deploy
-WorkingDirectory=/home/deploy/pgp-main-web/backend
-EnvironmentFile=/home/deploy/pgp-main-web/backend/.env
-ExecStart=/home/deploy/pgp-main-web/backend/.venv/bin/gunicorn \
+User=root
+Group=root
+WorkingDirectory=/root/pgp-main-web/pgp-main-web/backend
+EnvironmentFile=/root/pgp-main-web/pgp-main-web/backend/.env
+ExecStart=/root/pgp-main-web/pgp-main-web/backend/.venv/bin/gunicorn \
   --bind 127.0.0.1:8000 \
   --workers 3 \
   --timeout 120 \

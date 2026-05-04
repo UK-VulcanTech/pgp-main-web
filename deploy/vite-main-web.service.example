@@ -1,0 +1,27 @@
+# Copy to /etc/systemd/system/vite-main-web.service (adjust User, paths).
+# Then: sudo systemctl daemon-reload && sudo systemctl enable --now vite-main-web
+#
+# If you see: Error: Cannot find module 'node:path'  → systemd is using OLD /usr/bin/node
+# with nvm’s npm. Fix: put Node 20+ bin FIRST in PATH (see Environment=PATH below).
+#
+# nginx should proxy / → http://127.0.0.1:5173 (see VPS_MANUAL_DEPLOY.md).
+
+[Unit]
+Description=PGP main_web — Vite dev (port 5173)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/home/deploy/pgp-main-web/main_web
+Environment=NODE_ENV=development
+# nvm (example for root — change version/path): PATH=/root/.nvm/versions/node/v20.20.2/bin:/usr/bin:/bin
+# NodeSource system Node: PATH=/usr/bin:/bin is usually enough; use: which node && which npm
+Environment=PATH=/usr/bin:/bin
+ExecStart=/usr/bin/npm run dev -- --host 0.0.0.0 --port 5173
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

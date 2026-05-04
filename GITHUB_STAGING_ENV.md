@@ -1,17 +1,46 @@
-# GitHub Actions + VPS: `staging.peakglobalpartners.com`
+# GitHub Actions + VPS (legacy reference)
 
-This matches **`.github/workflows/deploy.yml`**: only **`main_web`** and **`cms-admin`** are **built** in CI; **`dist/`** folders are **rsync’d** to the VPS. **Django (`backend/`)** is **not** copied from this job—it should already run on the server (e.g. gunicorn on `127.0.0.1:8000`).
+**Current approach:** deploy manually from the server — see **`VPS_MANUAL_DEPLOY.md`**. **`.github/workflows/deploy.yml`** no longer builds or uploads; it is a manual-only reminder.
 
-**Database:** the project uses **SQLite** at **`backend/db.sqlite3`** (same directory as Django’s `manage.py` tree). Set **`BACKEND_DATABASE_URL`** in GitHub to the **absolute path on the VPS** (see below). This workflow does **not** upload the database file; copy it once or run **`migrate`** on the server.
+---
+
+This document described the old automated layout for **`staging.peakglobalpartners.com`**. It may still help if you re-enable CI later.
+
+This matched **`.github/workflows/deploy.yml`** when that workflow performed rsync and secret-based **`.env`** upload.
+
+- **Built in CI:** `main_web` and `cms-admin` (`npm ci` + `npm run build`), then **rsync** of **`dist/`** only.
+- **On the VPS:** each deploy runs **`deploy/vps-git-sync.sh`**: **`git clone`** into **`dirname(VPS_BACKEND_PROJECT_ROOT)`** on first run, then **`git pull`** on later runs (branch = push branch or **`VPS_GIT_BRANCH`**). **Private repos** need secret **`GIT_CLONE_TOKEN`** (fine-grained or classic PAT with **contents read**). If **`…/pgp-main-web`** already exists but is **not** a git repo (e.g. only **`backend/media`**), remove that tree (back up **`media/`** first) so clone can run.
+- **nginx + TLS** can be installed by the workflow (**first-time bootstrap**, after git). **Django** still needs a **venv** on the server (**`pip install`**, **`migrate`**) and **gunicorn** on **`127.0.0.1:8000`** (not done by Actions).
+- **Nginx config** is pushed from **`deploy/nginx-staging.conf.template`** on every run (rendered with your paths).
+
+**Database:** **SQLite** at **`backend/db.sqlite3`**. Set **`BACKEND_DATABASE_URL`** to the **absolute path on the VPS**. This workflow does **not** upload the DB file.
 
 | URL path | What serves it |
 |----------|----------------|
 | `https://staging.peakglobalpartners.com/` | `main_web` static build |
-| `https://staging.peakglobalpartners.com/cms/` | `cms-admin` static build (`VITE_BASE_PATH=/cms/`) |
-| `https://staging.peakglobalpartners.com/api/` | Django (nginx → upstream) |
-| `https://staging.peakglobalpartners.com/media/` | Django `MEDIA_ROOT` (nginx `alias`) |
+| `https://staging.peakglobalpartners.com/cms/` | `cms-admin` (`VITE_BASE_PATH=/cms/`) |
+| `https://staging.peakglobalpartners.com/api/` | Django (nginx → `127.0.0.1:8000`) |
+| `https://staging.peakglobalpartners.com/media/` | `VPS_BACKEND_PROJECT_ROOT/media` |
 
-Nginx sample: **`deploy/nginx-staging.peakglobalpartners.com.conf.example`**.
+**Templates in repo:** `deploy/nginx-staging.conf.template`, `deploy/vps-bootstrap-remote.sh`, `deploy/vps-git-sync.sh`, `deploy/gunicorn-staging.service.example`.
+
+---
+
+## 0. VPS user requirements (important)
+
+The SSH user (**`VPS_USER`**, e.g. `deploy`) must be able to run **`sudo`** **without a password** for:
+
+- `apt-get`, `ufw`, `certbot`, `nginx`, `mkdir` / `chown` under **`VPS_REMOTE_WEB_ROOT`**
+
+Example (on the server, as root): add **`/etc/sudoers.d/deploy`**:
+
+```text
+deploy ALL=(ALL) NOPASSWD:ALL
+```
+
+Tighten this in production to only the commands you need.
+
+**DNS:** Before the **first** workflow run with **`VPS_BOOTSTRAP=true`**, **`STAGING_DOMAIN`** must resolve to this server’s **public IP** (Let’s Encrypt **HTTP-01** on port **80**).
 
 ---
 
@@ -19,118 +48,147 @@ Nginx sample: **`deploy/nginx-staging.peakglobalpartners.com.conf.example`**.
 
 **Repository → Settings → Secrets and variables → Actions**
 
-- **Secrets** → sensitive values  
-- **Variables** → non-secret config (still do not commit them to git)
+- **Secrets** — sensitive values  
+- **Variables** — non-sensitive config  
 
 ---
 
 ## 2. Secrets (exact names the workflow uses)
 
-Create **Settings → Secrets and variables → Actions → Secrets → New repository secret**.
-
 | Secret name | Example value | Notes |
 |-------------|----------------|-------|
-| `VPS_HOST` | `staging.peakglobalpartners.com` or `203.0.113.50` | SSH target |
-| `VPS_USER` | `deploy` | SSH user |
-| `VPS_PASSWORD` | `••••••••` | SSH password for `sshpass`. Prefer SSH keys in a hardened setup. |
-| `BACKEND_SECRET_KEY` | Output of `python -c "import secrets; print(secrets.token_urlsafe(50))"` | Django only; required if **`SYNC_BACKEND_ENV_TO_VPS`** is `true` |
-| `BACKEND_DATABASE_URL` | `sqlite:////home/deploy/pgp-main-web/backend/db.sqlite3` | **SQLite:** use **four** slashes after `sqlite:` for an **absolute** path to `db.sqlite3` on the VPS. Adjust the path to match your real deploy directory (must be the same machine gunicorn runs on). Required if syncing `.env` to VPS. |
-
-**SQLite URL shape (django-environ / Django):**
-
-- Absolute file: `sqlite:////FULL/PATH/backend/db.sqlite3` (note `sqlite:////`, then path from root).
-- Local dev (repo root): default in code is already `backend/db.sqlite3` relative to `BASE_DIR` when **`DATABASE_URL`** is empty in `.env`.
+| `VPS_HOST` | `staging.peakglobalpartners.com` or `203.0.113.50` | SSH host |
+| `VPS_USER` | `deploy` | SSH user (needs passwordless `sudo`; see above) |
+| `VPS_PASSWORD` | `••••••••` | Used by `sshpass` in Actions |
+| `CERTBOT_EMAIL` | `you@yourdomain.com` | **Required when `VPS_BOOTSTRAP=true`** — Let’s Encrypt account / expiry mail |
+| `BACKEND_SECRET_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(50))"` | If **`SYNC_BACKEND_ENV_TO_VPS`** is `true` |
+| `BACKEND_DATABASE_URL` | `sqlite:////home/deploy/pgp-main-web/backend/db.sqlite3` | **Four** slashes after `sqlite:`; absolute path to **`db.sqlite3`** on the VPS |
+| `GIT_CLONE_TOKEN` | *(GitHub PAT)* | **Required for private repos.** Without it, `git clone` on the VPS fails with *could not read Username for https://github.com*. Use a **fine-grained PAT** (this repo only, **Contents: Read**) or a **classic PAT** with **`repo`** scope. **Repository → Settings → Secrets and variables → Actions → New repository secret** — name exactly **`GIT_CLONE_TOKEN`**, value = the token. |
 
 ---
 
 ## 3. Variables (exact names)
 
-**Settings → Secrets and variables → Actions → Variables → New repository variable**
-
-### Deploy paths (required)
+### Required for this layout
 
 | Variable name | Example value |
 |---------------|----------------|
-| `VPS_REMOTE_WEB_ROOT` | `/var/www/staging.peakglobalpartners.com` | **No trailing slash.** Must match nginx `root`. CI writes `main_web` files here and `cms-admin` under `…/cms/`. |
+| `VPS_REMOTE_WEB_ROOT` | `/var/www/staging.peakglobalpartners.com` | **No trailing slash.** Site root + `cms/` subfolder |
+| `VPS_BACKEND_PROJECT_ROOT` | `/home/deploy/pgp-main-web/backend` | **No trailing slash.** Used for **`/media/`** in nginx (`…/media`) and for creating dirs |
 
-### Frontend build (staging / “production” static build)
+### First-time server setup (then turn off)
 
-| Variable name | Example value | Notes |
-|---------------|----------------|-------|
-| `MAIN_WEB_VITE_PUBLIC_API_URL` | *(leave unset)* | **Unset or empty** → browser uses **same origin** `/api/public/v1` (recommended for this layout). |
-| `CMS_ADMIN_VITE_API_BASE` | *(leave unset)* | **Unset or empty** → CMS calls **same origin** `/api/manage/v1`. Optional explicit: `https://staging.peakglobalpartners.com` (no trailing slash). |
-| `CMS_ADMIN_VITE_BASE_PATH` | `/cms/` | **Must end with `/`.** If unset, the workflow defaults to **`/cms/`** in YAML. |
+| Variable name | Value | Notes |
+|---------------|-------|--------|
+| `VPS_BOOTSTRAP` | `true` then **`false`** | **`true` once:** installs **nginx**, **ufw**, obtains **TLS cert** (standalone), creates dirs. **Set back to `false`** after the first successful run to skip apt/cert on every push. |
+
+### Optional domain override
+
+| Variable name | Example |
+|---------------|---------|
+| `STAGING_DOMAIN` | `staging.peakglobalpartners.com` | If unset, workflow defaults to this hostname |
+
+### Frontend build
+
+| Variable name | Example | Notes |
+|---------------|---------|--------|
+| `MAIN_WEB_VITE_PUBLIC_API_URL` | *(unset)* | Same-origin `/api/public/v1` |
+| `CMS_ADMIN_VITE_API_BASE` | *(unset)* | Same-origin `/api/manage/v1` |
+| `CMS_ADMIN_VITE_BASE_PATH` | `/cms/` | Workflow defaults to `/cms/` if unset |
+
+### Optional: git URL / branch on VPS
+
+| Variable name | Example | Notes |
+|---------------|---------|--------|
+| `VPS_GIT_REPO_URL` | `https://github.com/org/other-repo.git` | If unset, clone URL is **`https://github.com/<this-repo>.git`** (with token if **`GIT_CLONE_TOKEN`** is set). |
+| `VPS_GIT_BRANCH` | `main` | If unset, uses the **branch that triggered the workflow** (e.g. **`main`**). |
 
 ### Optional: push `backend/.env` from GitHub
 
-| Variable name | Value | Notes |
-|---------------|-------|-------|
-| `SYNC_BACKEND_ENV_TO_VPS` | `true` | Enables the “Upload backend .env” step. |
-| `VPS_BACKEND_ENV_PATH` | `/home/deploy/pgp-main-web/backend/.env` | Absolute path on the VPS where the file is written. |
-| `BACKEND_ALLOWED_HOSTS` | `staging.peakglobalpartners.com,.peakglobalpartners.com` | Comma-separated, **no spaces**. |
-| `BACKEND_CORS_ALLOWED_ORIGINS` | `https://staging.peakglobalpartners.com` | With same-domain SPAs you can use this single origin; add more if needed. **Full URL, no trailing slash.** |
-| `BACKEND_DEBUG` | `False` | Production-style. |
-| `BACKEND_JWT_ACCESS_MINUTES` | `30` | Optional; workflow defaults apply if unset. |
-| `BACKEND_JWT_REFRESH_DAYS` | `7` | Optional. |
-| `BACKEND_SECURE_SSL_REDIRECT` | `True` | Django behind HTTPS reverse proxy. |
-| `BACKEND_SECURE_HSTS_SECONDS` | `31536000` | Optional. |
+| Variable name | Value |
+|---------------|-------|
+| `SYNC_BACKEND_ENV_TO_VPS` | `true` |
+| `VPS_BACKEND_ENV_PATH` | `/home/deploy/pgp-main-web/backend/.env` |
+| `BACKEND_ALLOWED_HOSTS` | `staging.peakglobalpartners.com` |
+| `BACKEND_CORS_ALLOWED_ORIGINS` | `https://staging.peakglobalpartners.com` |
+| `BACKEND_DEBUG` | `False` |
+| `BACKEND_JWT_ACCESS_MINUTES` | `30` |
+| `BACKEND_JWT_REFRESH_DAYS` | `7` |
+| `BACKEND_SECURE_SSL_REDIRECT` | `True` |
+| `BACKEND_SECURE_HSTS_SECONDS` | `31536000` |
 
-### Optional: restart Django after `.env` upload
+### Optional: restart Django
 
-| Variable name | Example value |
-|---------------|----------------|
-| `VPS_BACKEND_RESTART_CMD` | `sudo systemctl restart gunicorn` | Exact command on your VPS; leave **unset** to skip. |
+| Variable name | Example |
+|---------------|---------|
+| `VPS_BACKEND_RESTART_CMD` | `sudo systemctl restart gunicorn` |
 
 ---
 
-## 4. Copy-paste summary (staging.peakglobalpartners.com)
+## 4. First deploy (new VPS)
+
+1. Create **`deploy`** (or your **`VPS_USER`**) with SSH password (or switch workflow to keys later).
+2. Grant **passwordless sudo** (see §0).
+3. Point **DNS** for **`staging.peakglobalpartners.com`** at the VPS **public IP**.
+4. In GitHub, set **Secrets** and **Variables** (including **`VPS_BACKEND_PROJECT_ROOT`**, **`VPS_REMOTE_WEB_ROOT`**).
+5. Set **`VPS_BOOTSTRAP=true`**.
+6. Push **`main`** (or run the workflow). Wait for **git clone/pull** + **Let’s Encrypt** + **nginx** + **rsync** + optional **`.env`**.
+7. Set **`VPS_BOOTSTRAP=false`** for subsequent pushes.
+
+**Private repository:** add secret **`GIT_CLONE_TOKEN`**.
+
+If the VPS already has a **non-git** folder at **`dirname(VPS_BACKEND_PROJECT_ROOT)`** (e.g. only **`backend/media`**), back up **`media/`**, remove that directory, and re-run the workflow so **`git clone`** can succeed.
+
+---
+
+## 5. Copy-paste summary
 
 **Secrets**
 
-```
-VPS_HOST=staging.peakglobalpartners.com   (or IP)
+```text
+VPS_HOST=staging.peakglobalpartners.com
 VPS_USER=deploy
-VPS_PASSWORD=<your-ssh-password>
-BACKEND_SECRET_KEY=<50+ char random>
+VPS_PASSWORD=<ssh-password>
+CERTBOT_EMAIL=<your-email@domain.com>
+BACKEND_SECRET_KEY=<50+ random chars>
 BACKEND_DATABASE_URL=sqlite:////home/deploy/pgp-main-web/backend/db.sqlite3
 ```
 
-Replace the path with your VPS path to **`backend/db.sqlite3`** (four slashes after `sqlite:`).
+**Variables (first run)**
 
-**Variables**
-
-```
+```text
 VPS_REMOTE_WEB_ROOT=/var/www/staging.peakglobalpartners.com
-CMS_ADMIN_VITE_BASE_PATH=/cms/
-```
-
-Leave **`MAIN_WEB_VITE_PUBLIC_API_URL`** and **`CMS_ADMIN_VITE_API_BASE`** unset for same-origin API.
-
-**If syncing Django env from GitHub**
-
-```
+VPS_BACKEND_PROJECT_ROOT=/home/deploy/pgp-main-web/backend
+VPS_BOOTSTRAP=true
 SYNC_BACKEND_ENV_TO_VPS=true
-VPS_BACKEND_ENV_PATH=/path/on/server/backend/.env
+VPS_BACKEND_ENV_PATH=/home/deploy/pgp-main-web/backend/.env
 BACKEND_ALLOWED_HOSTS=staging.peakglobalpartners.com
 BACKEND_CORS_ALLOWED_ORIGINS=https://staging.peakglobalpartners.com
 BACKEND_DEBUG=False
+CMS_ADMIN_VITE_BASE_PATH=/cms/
 ```
 
----
-
-## 5. VPS checklist (outside GitHub)
-
-1. Create **`VPS_REMOTE_WEB_ROOT`** and `…/cms/` on the server.
-2. Install **nginx** + **TLS** (e.g. Let’s Encrypt) for `staging.peakglobalpartners.com`.
-3. Apply a config derived from **`deploy/nginx-staging.peakglobalpartners.com.conf.example`** (fix `media/` path, SSL paths, upstream port).
-4. Run **Django** on `127.0.0.1:8000` (or change `upstream` + `proxy_pass`).
-5. **`ALLOWED_HOSTS`** must include `staging.peakglobalpartners.com`.
-6. **SQLite:** ensure **`backend/db.sqlite3`** exists on the VPS at the path used in **`BACKEND_DATABASE_URL`** (copy from dev once, or run **`python manage.py migrate`** there). The gunicorn user must be able to **read/write** that file (and the `backend/` directory).
-7. Do **not** expose `backend/.env`, **`db.sqlite3`**, or `media/` as raw file download from the public web root.
-8. **`db.sqlite3`** is for **low concurrent write** traffic; consider Postgres later if many editors hit the CMS at once.
+After first success: set **`VPS_BOOTSTRAP=false`**.
 
 ---
 
-## 6. Real production domain later
+## 6. VPS checklist (outside GitHub)
 
-Use the same pattern with a new hostname (e.g. `www.peakglobalpartners.com`), duplicate Variables, point DNS, update **`BACKEND_ALLOWED_HOSTS`** / **`CORS_ALLOWED_ORIGINS`**, and optionally a second workflow or **GitHub Environment** (`production`) with its own secrets.
+1. **Git:** the deploy workflow **clones or pulls** the app into **`dirname(VPS_BACKEND_PROJECT_ROOT)`**. On the VPS, **`cd`** to **`VPS_BACKEND_PROJECT_ROOT`**, create a **venv**, **`pip install -r requirements.txt`**, **`python manage.py migrate`**, and **`collectstatic`** only if you serve Django static files from the app (often optional behind nginx).
+2. **Gunicorn** must be **running** and bound to **`127.0.0.1:8000`** — nginx proxies there. If nothing listens, nginx logs **`connect() failed (111`** (connection refused). Use **`deploy/gunicorn-staging.service.example`**: copy to **`/etc/systemd/system/gunicorn-staging.service`**, fix **`User`**, **`WorkingDirectory`**, **`EnvironmentFile`**, and **`ExecStart`** (path to **`gunicorn`** in your venv), then **`sudo systemctl daemon-reload && sudo systemctl enable --now gunicorn-staging`**. Set **`VPS_BACKEND_RESTART_CMD`** to **`sudo systemctl restart gunicorn-staging`** so deploys can reload after **`.env`** changes.
+3. **`db.sqlite3`** at the path in **`BACKEND_DATABASE_URL`** (migrate or copy); app user can read/write.
+4. Do **not** expose **`.env`**, **`db.sqlite3`**, or **`media/`** as raw downloads from the web.
+5. **`db.sqlite3`** suits low concurrent writes; use Postgres if many CMS users write at once.
+
+### Nginx `111` / API 502 on staging
+
+- **Symptom:** Browser fails API calls; nginx error log shows **`connect() failed (111`** to **`127.0.0.1:8000`**.
+- **Cause:** No process is listening on port **8000** (Gunicorn not started or bound elsewhere).
+- **On the server:** `ss -tlnp | grep 8000` should show **`gunicorn`** (or your WSGI server). **`curl -sI http://127.0.0.1:8000/api/public/v1/site/`** should return **HTTP/1.1 200** (or **401**/JSON — not “connection refused”).
+- **Fix:** Install/start Gunicorn per **`deploy/gunicorn-staging.service.example`** and **`journalctl -u gunicorn-staging -f`** if it exits immediately (bad **`.env`**, missing migrations, wrong **`WorkingDirectory`**).
+
+---
+
+## 7. Real production domain later
+
+Duplicate secrets/variables, set **`STAGING_DOMAIN`**, update DNS, **`BACKEND_*`**, and optionally a separate workflow or GitHub **Environment**.
