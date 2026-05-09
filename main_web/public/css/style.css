@@ -2328,3 +2328,42 @@ form.contact-form {
 @media (max-width: 380px) {
   .header-actions .theme-toggle { display: none; }
 }
+
+/* =========================================================
+   Always-white text on always-navy sections (both themes).
+   The "btn-on-dark" secondary button used --color-text-inverse,
+   which flips to dark navy in dark theme and disappears against
+   the navy hero/page-header backgrounds. Pin to cream so the
+   text reads clearly in light AND dark mode.
+   ========================================================= */
+.hero .btn-on-dark.btn-secondary,
+.page-header .btn-on-dark.btn-secondary,
+.page-hero .btn-on-dark.btn-secondary,
+.sector-hero .btn-on-dark.btn-secondary,
+.btn-on-dark.btn-secondary {
+  color: #F7F5F0;
+}
+.hero .btn-on-dark.btn-secondary:hover,
+.page-header .btn-on-dark.btn-secondary:hover,
+.page-hero .btn-on-dark.btn-secondary:hover,
+.sector-hero .btn-on-dark.btn-secondary:hover,
+.btn-on-dark.btn-secondary:hover {
+  color: #FFFFFF;
+}
+
+/* Reinforce: every hero/page-header heading stays cream in
+   both themes regardless of any later cascade. */
+.hero h1, .hero .hero__title,
+.page-header h1, .page-header .page-header__title,
+.page-hero h1, .sector-hero h1 {
+  color: #F7F5F0;
+}
+[data-theme="dark"] .hero h1,
+[data-theme="dark"] .hero .hero__title,
+[data-theme="dark"] .page-header h1,
+[data-theme="dark"] .page-header .page-header__title,
+[data-theme="dark"] .page-hero h1,
+[data-theme="dark"] .sector-hero h1 {
+  color: #F7F5F0;
+}
+
