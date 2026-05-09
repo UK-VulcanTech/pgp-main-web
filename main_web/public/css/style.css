@@ -2370,27 +2370,50 @@ body.nav-open {
   .site-header__inner { gap: var(--space-6); }
 }
 
-/* Tablet header: hide the "Peak Global Partners" wordmark so the
-   logo, theme toggle, Contact CTA, and hamburger all fit on iPad
-   portrait (768px) without crowding. */
-@media (max-width: 1024px) {
-  .site-logo span { display: none; }
-}
-
-/* Mobile header: things were spilling off-screen because the
-   logo + theme toggle + Contact button + hamburger added up to
-   more than 375px. Hide the redundant Contact CTA (already in
-   the drawer) on small viewports and clamp the logo image. */
+/* Tablet/mobile header: hide the redundant Contact CTA (already in
+   the drawer) at <=720px so the wordmark stays visible, and shrink
+   the wordmark a touch so "Peak Global Partners" still fits next
+   to the logo on a 390px iPhone. */
 @media (max-width: 720px) {
   .site-header__inner {
     height: 4rem;
-    gap: var(--space-2);
+    gap: var(--space-3);
     padding-inline: var(--space-4);
   }
-  .site-logo__img { width: 32px; }
+  .site-logo {
+    font-size: 0.9375rem;
+    letter-spacing: -0.015em;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .site-logo span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-logo__img { width: 36px; }
   .header-actions .btn-primary { display: none; }
-  .header-actions { gap: var(--space-2); }
+  .header-actions { gap: var(--space-2); flex: 0 0 auto; }
   .primary-nav { top: 4rem; }
+}
+
+/* Very small phones (<=400px): give up the wordmark instead of
+   ellipsis-truncating it — looks cleaner. */
+@media (max-width: 400px) {
+  .site-logo span { display: none; }
+}
+
+/* Make the sticky header always visible at the top of the page,
+   not just when scrolled. The previous color-mix on transparent
+   blended into the navy hero so users couldn't tell where the
+   header ended. */
+.site-header {
+  background: color-mix(in oklab, var(--color-bg) 92%, transparent);
+  border-bottom-color: color-mix(in oklab, var(--color-divider) 60%, transparent);
+}
+.site-header.scrolled {
+  background: color-mix(in oklab, var(--color-bg) 96%, transparent);
+  border-bottom-color: var(--color-divider);
 }
 
 /* On the smallest screens, also hide the theme toggle to keep
