@@ -2361,6 +2361,15 @@ body.nav-open {
   }
 }
 
+/* Hide the standalone "Approach" link on mobile and tablet — it caused
+   overlap in the drawer/header at narrow widths. The page is still
+   reachable via the footer "Company" section and direct URL. */
+@media (max-width: 1280px) {
+  .primary-nav > a[href="/approach"] {
+    display: none;
+  }
+}
+
 /* Desktop: keep everything on one line, give the nav a little
    extra horizontal padding from the contact button. */
 @media (min-width: 1281px) {
