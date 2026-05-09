@@ -653,7 +653,7 @@ section.compact { padding-block: clamp(var(--space-12), 6vw, var(--space-20)); }
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url('../images/topo-bg.png');
+  background-image: url('../images/topo-bg.webp');
   background-size: cover;
   background-position: center;
   opacity: 0.18;
@@ -1238,7 +1238,7 @@ form.contact-form {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url('../images/topo-bg.png');
+  background-image: url('../images/topo-bg.webp');
   background-size: cover;
   background-position: center;
   opacity: 0.08;
@@ -2184,4 +2184,147 @@ form.contact-form {
 }
 @media (max-width: 560px) {
   .cf-phases, .cf-grid { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
+   App overrides — pin text colors on always-navy sections so
+   they remain readable in dark mode (the design tokens flip
+   `--color-text-inverse` to dark navy in dark theme, which
+   becomes invisible against the fixed navy backgrounds).
+   ========================================================= */
+.hero,
+.page-header,
+.page-hero,
+.sector-hero,
+.proof-bar {
+  background: var(--color-navy);
+  color: #F7F5F0;
+}
+.hero h1,
+.hero__title,
+.page-header h1,
+.page-header__title,
+.page-hero h1,
+.sector-hero h1,
+.cyber-framework h2,
+.hero__meta-item .value {
+  color: #F7F5F0;
+}
+[data-theme="dark"] .hero__lede,
+[data-theme="dark"] .page-header__lede,
+[data-theme="dark"] .page-hero .hero__lede,
+[data-theme="dark"] .sector-hero .hero__lede {
+  color: rgba(247, 245, 240, 0.85);
+}
+[data-theme="dark"] .hero__meta-item .desc,
+[data-theme="dark"] .proof-stat .label {
+  color: rgba(247, 245, 240, 0.7);
+}
+.cyber-framework {
+  background: var(--color-navy);
+}
+
+/* =========================================================
+   Header / nav fixes
+   - Switch to mobile drawer earlier so the desktop nav has
+     room to breathe (the original 1080px breakpoint clips
+     "Training & Skills Transfer" against the Contact button).
+   - Inside the mobile drawer, render mega menus as plain
+     stacked lists rather than floating popovers.
+   ========================================================= */
+@media (max-width: 1180px) {
+  .primary-nav {
+    position: fixed;
+    top: 4.5rem;
+    left: 0;
+    right: 0;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-divider);
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-4);
+    gap: 0;
+    transform: translateY(-110%);
+    transition: transform var(--transition-slow);
+    box-shadow: var(--shadow-md);
+    max-height: calc(100vh - 4.5rem);
+    overflow-y: auto;
+  }
+  .primary-nav.open { transform: translateY(0); }
+  .primary-nav a {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base);
+    white-space: normal;
+  }
+  .menu-toggle { display: inline-flex; }
+
+  .nav-dropdown {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .nav-dropdown__trigger { flex: 1; }
+  .nav-dropdown__caret {
+    align-self: flex-end;
+    margin: -2.25rem 8px 0 0;
+  }
+
+  .mega-menu {
+    position: static;
+    transform: none;
+    width: 100%;
+    background: var(--color-surface-offset);
+    border: 1px solid var(--color-divider);
+    box-shadow: none;
+    padding: var(--space-2);
+    margin-top: var(--space-2);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    display: none;
+  }
+  .mega-menu::before { display: none; }
+  .nav-dropdown.open .mega-menu {
+    display: block;
+    transform: none;
+  }
+  .mega-menu__grid { grid-template-columns: 1fr; gap: 2px; }
+  .mega-item { color: var(--color-text); }
+  .mega-item:hover { background: var(--color-surface); }
+  .mega-item__title { color: var(--color-text); }
+  .mega-item__sub { color: var(--color-text-muted); }
+}
+
+/* Desktop: keep everything on one line, give the nav a little
+   extra horizontal padding from the contact button. */
+@media (min-width: 1181px) {
+  .primary-nav { gap: 4px; }
+  .primary-nav a { padding-inline: 12px; }
+  .header-actions { gap: var(--space-4); }
+}
+
+/* Mobile header: things were spilling off-screen because the
+   logo wordmark + theme toggle + Contact button + hamburger
+   added up to more than 375px. Hide the wordmark and the
+   redundant Contact CTA (already in the drawer) on small
+   viewports, and clamp the logo image. */
+@media (max-width: 720px) {
+  .site-header__inner {
+    height: 4rem;
+    gap: var(--space-2);
+    padding-inline: var(--space-4);
+  }
+  .site-logo span { display: none; }
+  .site-logo__img { width: 32px; }
+  .header-actions .btn-primary { display: none; }
+  .header-actions { gap: var(--space-2); }
+  .primary-nav { top: 4rem; }
+}
+
+/* On the smallest screens, also hide the theme toggle to keep
+   the header readable; users can still toggle from the drawer
+   if needed. */
+@media (max-width: 380px) {
+  .header-actions .theme-toggle { display: none; }
 }

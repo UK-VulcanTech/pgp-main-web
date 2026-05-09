@@ -1,86 +1,67 @@
 import axios from "axios";
 
-const base = import.meta.env.VITE_API_BASE ?? "";
+const API_BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "") + "/api/manage/v1";
+export const PUBLIC_BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "") + "/api/public/v1";
 
-export const api = axios.create({
-  baseURL: `${base}/api/manage/v1`,
-  headers: { "Content-Type": "application/json" },
-});
+export const cms = axios.create({ baseURL: API_BASE, timeout: 12_000 });
 
-export const publicApi = axios.create({
-  baseURL: `${base}/api/public/v1`,
-});
+const ACCESS_KEY = "pgp_cms_access";
+const REFRESH_KEY = "pgp_cms_refresh";
 
-const CMS_USER_KEY = "cms_user";
+export const tokenStore = {
+  get access() {
+    return localStorage.getItem(ACCESS_KEY);
+  },
+  get refresh() {
+    return localStorage.getItem(REFRESH_KEY);
+  },
+  set({ access, refresh }) {
+    if (access) localStorage.setItem(ACCESS_KEY, access);
+    if (refresh) localStorage.setItem(REFRESH_KEY, refresh);
+  },
+  clear() {
+    localStorage.removeItem(ACCESS_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+  },
+};
 
-let accessToken = localStorage.getItem("access_token") || "";
-let refreshToken = localStorage.getItem("refresh_token") || "";
-
-export function getCmsUser() {
-  try {
-    const raw = localStorage.getItem(CMS_USER_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-export function setCmsUser(obj) {
-  if (obj) localStorage.setItem(CMS_USER_KEY, JSON.stringify(obj));
-  else localStorage.removeItem(CMS_USER_KEY);
-}
-
-export function setTokens(access, refresh) {
-  accessToken = access;
-  refreshToken = refresh || refreshToken;
-  if (access) localStorage.setItem("access_token", access);
-  if (refresh) localStorage.setItem("refresh_token", refresh);
-}
-
-export function clearTokens() {
-  accessToken = "";
-  refreshToken = "";
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
-  localStorage.removeItem(CMS_USER_KEY);
-}
-
-export function getAccessToken() {
-  return accessToken;
-}
-
-api.interceptors.request.use((config) => {
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
-  if (config.data instanceof FormData) {
-    delete config.headers["Content-Type"];
-  }
+cms.interceptors.request.use((config) => {
+  const t = tokenStore.access;
+  if (t) config.headers.Authorization = `Bearer ${t}`;
   return config;
 });
 
 let refreshing = null;
-api.interceptors.response.use(
+async function refreshAccess() {
+  if (!tokenStore.refresh) return null;
+  if (refreshing) return refreshing;
+  refreshing = axios
+    .post(`${API_BASE}/auth/refresh/`, { refresh: tokenStore.refresh })
+    .then((r) => {
+      tokenStore.set({ access: r.data.access });
+      return r.data.access;
+    })
+    .catch(() => {
+      tokenStore.clear();
+      return null;
+    })
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
+cms.interceptors.response.use(
   (r) => r,
   async (error) => {
-    const orig = error.config;
-    if (error.response?.status === 401 && refreshToken && !orig._retry) {
-      orig._retry = true;
-      try {
-        refreshing =
-          refreshing ||
-          axios.post(`${base}/api/manage/v1/auth/refresh/`, {
-            refresh: refreshToken,
-          });
-        const { data } = await refreshing;
-        refreshing = null;
-        setTokens(data.access, null);
-        orig.headers.Authorization = `Bearer ${data.access}`;
-        return api(orig);
-      } catch {
-        refreshing = null;
-        clearTokens();
+    const original = error.config || {};
+    const status = error.response?.status;
+    if (status === 401 && !original._retried && original.url && !original.url.includes("/auth/")) {
+      original._retried = true;
+      const next = await refreshAccess();
+      if (next) {
+        original.headers = { ...(original.headers || {}), Authorization: `Bearer ${next}` };
+        return cms(original);
       }
     }
     return Promise.reject(error);
@@ -88,17 +69,9 @@ api.interceptors.response.use(
 );
 
 export async function login(username, password) {
-  const { data } = await axios.post(`${base}/api/manage/v1/auth/login/`, {
-    username,
-    password,
-  });
-  setTokens(data.access, data.refresh);
-  if (data.user) setCmsUser(data.user);
-  return data;
+  const r = await axios.post(`${API_BASE}/auth/login/`, { username, password });
+  tokenStore.set({ access: r.data.access, refresh: r.data.refresh });
 }
-
-export async function fetchMe() {
-  const { data } = await api.get("/me/");
-  setCmsUser(data);
-  return data;
+export function logout() {
+  tokenStore.clear();
 }

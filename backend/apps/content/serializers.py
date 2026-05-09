@@ -1,609 +1,454 @@
-from django.contrib.auth import get_user_model
-
+"""
+Serializers for the public read-only API. Each top-level page returns a
+single shape that mirrors the React page's structure 1:1, so the frontend
+can drop them directly into JSX.
+"""
 from rest_framework import serializers
 
-from .cms_sections import ALL_CMS_SECTIONS
 from .models import (
-    AboutApproachStep,
-    AboutDifferentiatorCard,
+    AboutMeasureCard,
     AboutPage,
-    CaseStudy,
-    CaseStudyQuadrant,
+    AboutPrinciple,
+    AboutWhoBullet,
+    ApproachBlock,
+    ApproachBlockBullet,
+    ApproachPage,
     ContactPage,
-    ContactSectorOption,
-    CmsEditorProfile,
+    ContactSector,
     ContactSubmission,
-    FooterLink,
-    HomeHowStep,
+    CyberCard,
+    CyberPhase,
+    DftMetric,
+    DftOutcomeBullet,
+    DftPillar,
+    DftPillarPoint,
+    DftTimeline,
+    DigitalFastTrackPage,
+    HomeHeroMeta,
+    HomePPPBullet,
     HomePage,
     HomePillar,
-    ImpactMetric,
-    ImpactPage,
+    HomeProcessStep,
     SiteSettings,
     Solution,
     SolutionDeliverable,
-    SolutionSnapshotCard,
-    TechnologyDomain,
-    TechnologyEnablementItem,
-    TechnologyPage,
+    SolutionsPage,
     TrainingArea,
-    TrainingCard,
-    TrainingNavItem,
+    TrainingDeliverable,
+    TrainingPage,
 )
 
 
-def _abs_url(request, file_field):
-    if file_field and hasattr(file_field, "url"):
-        return request.build_absolute_uri(file_field.url)
-    return None
+class AbsoluteImageField(serializers.ImageField):
+    """Like ImageField but always returns an absolute URL (or None)."""
+
+    def to_representation(self, value):
+        if not value:
+            return None
+        request = self.context.get("request")
+        url = value.url
+        return request.build_absolute_uri(url) if request else url
 
 
-# ——— Manage (nested) ———
+class ImageOrUrlField(serializers.Field):
+    """Returns the sibling `<name>_url` text field if non-empty, else the
+    absolute URL of the uploaded ImageField, else None.
 
+    Used so the seed (and editors) can populate a static path like
+    `/images/hero-control-room.webp` without having to upload the file.
+    """
 
-class HomePillarNestedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = HomePillar
-        fields = ("id", "sort_order", "title", "description")
-
-
-class HomeHowStepNestedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = HomeHowStep
-        fields = ("id", "sort_order", "title", "description")
-
-
-class SolutionSnapshotCardNestedSerializer(serializers.ModelSerializer):
-    """Read: absolute image URLs. Write: handled in HomePageManageSerializer._sync_snapshot_cards."""
-
-    class Meta:
-        model = SolutionSnapshotCard
-        fields = ("id", "sort_order", "title", "description", "image", "hover_image")
+    def __init__(self, image_attr, url_attr, *args, **kwargs):
+        kwargs.setdefault("read_only", True)
+        super().__init__(*args, **kwargs)
+        self.image_attr = image_attr
+        self.url_attr = url_attr
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
+        url = getattr(instance, self.url_attr, "") or ""
+        if url:
+            return url
+        f = getattr(instance, self.image_attr, None)
+        if not f:
+            return None
+        try:
+            href = f.url
+        except (ValueError, AttributeError):
+            return None
         request = self.context.get("request")
-        if request:
-            data["image"] = request.build_absolute_uri(instance.image.url) if instance.image else None
-            data["hover_image"] = (
-                request.build_absolute_uri(instance.hover_image.url) if instance.hover_image else None
-            )
-        return data
+        return request.build_absolute_uri(href) if request else href
+
+    def get_attribute(self, instance):
+        # We pull from the model directly in to_representation, so just pass
+        # the instance through.
+        return instance
 
 
-_SNAP_IMG_SKIP = object()
+# ---------- Site --------------------------------------------------------------
 
 
-class HomePageManageSerializer(serializers.ModelSerializer):
-    pillars = HomePillarNestedSerializer(many=True, required=False)
-    how_steps = HomeHowStepNestedSerializer(many=True, required=False)
-    snapshot_cards = serializers.SerializerMethodField()
+class SiteSettingsSerializer(serializers.ModelSerializer):
+    favicon = AbsoluteImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = SiteSettings
+        fields = [
+            "meta_title", "meta_description", "favicon",
+            "footer_tagline", "footer_address", "footer_phone", "footer_email",
+            "copyright_line",
+            "social_linkedin", "social_x", "social_youtube",
+        ]
+
+
+# ---------- Home --------------------------------------------------------------
+
+
+class HomeHeroMetaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomeHeroMeta
+        fields = ["label", "value", "desc"]
+
+
+class HomePillarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomePillar
+        fields = ["num", "title", "description", "link_label", "link_url"]
+
+
+class HomePPPBulletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomePPPBullet
+        fields = ["text"]
+
+
+class HomeProcessStepSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomeProcessStep
+        fields = ["num", "title", "description"]
+
+
+class HomePageSerializer(serializers.ModelSerializer):
+    hero_image = ImageOrUrlField(image_attr="hero_image", url_attr="hero_image_url")
+    ppp_image = ImageOrUrlField(image_attr="ppp_image", url_attr="ppp_image_url")
+    hero_meta = HomeHeroMetaSerializer(many=True, read_only=True)
+    pillars = HomePillarSerializer(many=True, read_only=True)
+    ppp_bullets = HomePPPBulletSerializer(many=True, read_only=True)
+    process_steps = HomeProcessStepSerializer(many=True, read_only=True)
 
     class Meta:
         model = HomePage
-        fields = (
-            "hero_eyebrow",
-            "hero_h1",
-            "hero_body",
-            "hero_cta_primary_label",
-            "hero_cta_primary_url",
-            "hero_cta_secondary_label",
-            "hero_cta_secondary_url",
-            "hero_bg",
-            "what_deliver_title",
-            "ppp_heading",
-            "ppp_body",
-            "solutions_snapshot_title",
-            "how_we_work_title",
-            "cta_heading",
-            "cta_body",
-            "cta_button_label",
-            "cta_button_url",
-            "cta_bg",
+        fields = [
+            "hero_eyebrow", "hero_title_lead", "hero_title_em", "hero_lede", "hero_image",
+            "hero_cta_primary_label", "hero_cta_primary_url",
+            "hero_cta_secondary_label", "hero_cta_secondary_url",
+            "hero_meta",
+            "pillars_section_eyebrow", "pillars_section_title", "pillars_section_lede",
             "pillars",
-            "how_steps",
-            "snapshot_cards",
-        )
-
-    def get_snapshot_cards(self, obj):
-        qs = obj.snapshot_cards.all().order_by("sort_order", "id")
-        return SolutionSnapshotCardNestedSerializer(qs, many=True, context=self.context).data
-
-    def _sync_snapshot_cards(self, instance, rows):
-        from django.core.files.uploadedfile import UploadedFile
-
-        if not isinstance(rows, list):
-            return
-        existing = {c.id: c for c in instance.snapshot_cards.all()}
-        keep = []
-        for raw in rows:
-            if not isinstance(raw, dict):
-                continue
-            rid = raw.get("id")
-            try:
-                rid = int(rid) if rid is not None and rid != "" else None
-            except (TypeError, ValueError):
-                rid = None
-            title = raw.get("title") or ""
-            description = raw.get("description") or ""
-            try:
-                sort_order = int(raw.get("sort_order", 0))
-            except (TypeError, ValueError):
-                sort_order = 0
-            img_val = raw.get("image", _SNAP_IMG_SKIP)
-            hover_val = raw.get("hover_image", _SNAP_IMG_SKIP)
-
-            def _apply_file_field(obj, field, val):
-                if val is _SNAP_IMG_SKIP:
-                    return
-                if isinstance(val, UploadedFile):
-                    setattr(obj, field, val)
-                elif val is None:
-                    setattr(obj, field, None)
-                elif isinstance(val, str) and val.strip():
-                    # URL from last GET — do not replace file on disk
-                    if val.startswith("http") or "/media/" in val:
-                        return
-                # empty string or unknown: ignore
-
-            if rid is not None and rid in existing:
-                obj = existing[rid]
-                obj.title = title
-                obj.description = description
-                obj.sort_order = sort_order
-                _apply_file_field(obj, "image", img_val)
-                _apply_file_field(obj, "hover_image", hover_val)
-                obj.save()
-                keep.append(rid)
-            else:
-                obj = SolutionSnapshotCard(
-                    home=instance, title=title, description=description, sort_order=sort_order
-                )
-                if isinstance(img_val, UploadedFile):
-                    obj.image = img_val
-                if isinstance(hover_val, UploadedFile):
-                    obj.hover_image = hover_val
-                obj.save()
-                keep.append(obj.id)
-        instance.snapshot_cards.exclude(pk__in=keep).delete()
-
-    def update(self, instance, validated_data):
-        pillars = validated_data.pop("pillars", None)
-        how_steps = validated_data.pop("how_steps", None)
-        instance = super().update(instance, validated_data)
-        if pillars is not None:
-            instance.pillars.all().delete()
-            for row in pillars:
-                HomePillar.objects.create(home=instance, **row)
-        if how_steps is not None:
-            instance.how_steps.all().delete()
-            for row in how_steps:
-                HomeHowStep.objects.create(home=instance, **row)
-        if "snapshot_cards" in self.initial_data:
-            self._sync_snapshot_cards(instance, self.initial_data.get("snapshot_cards") or [])
-        return instance
+            "ppp_image", "ppp_eyebrow", "ppp_title", "ppp_body", "ppp_bullets",
+            "snapshot_section_eyebrow", "snapshot_section_title",
+            "howwework_section_eyebrow", "howwework_section_title", "process_steps",
+            "cta_heading", "cta_body",
+            "cta_primary_label", "cta_primary_url",
+            "cta_secondary_label", "cta_secondary_url",
+        ]
 
 
-class AboutCardNestedSerializer(serializers.ModelSerializer):
+# ---------- About -------------------------------------------------------------
+
+
+class AboutPrincipleSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AboutDifferentiatorCard
-        fields = ("id", "sort_order", "title", "text", "icon")
+        model = AboutPrinciple
+        fields = ["num", "title", "description"]
 
 
-class AboutApproachNestedSerializer(serializers.ModelSerializer):
+class AboutWhoBulletSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AboutApproachStep
-        fields = ("id", "sort_order", "number", "title", "description", "bullets")
+        model = AboutWhoBullet
+        fields = ["text"]
 
 
-class AboutPageManageSerializer(serializers.ModelSerializer):
-    differentiator_cards = AboutCardNestedSerializer(many=True, required=False)
-    approach_steps = AboutApproachNestedSerializer(many=True, required=False)
+class AboutMeasureCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AboutMeasureCard
+        fields = ["label", "title", "description"]
+
+
+class AboutPageSerializer(serializers.ModelSerializer):
+    page_image = ImageOrUrlField(image_attr="page_image", url_attr="page_image_url")
+    whoweserve_image = ImageOrUrlField(image_attr="whoweserve_image", url_attr="whoweserve_image_url")
+    principles = AboutPrincipleSerializer(many=True, read_only=True)
+    who_bullets = AboutWhoBulletSerializer(many=True, read_only=True)
+    measure_cards = AboutMeasureCardSerializer(many=True, read_only=True)
 
     class Meta:
         model = AboutPage
-        fields = (
-            "hero_title",
-            "hero_intro",
-            "hero_wave_image",
-            "differentiators_section_title",
-            "who_heading",
-            "who_body",
-            "outcome_heading",
-            "outcome_subheading",
-            "outcome_body",
-            "outcome_cta_label",
-            "outcome_cta_url",
-            "outcome_image",
-            "approach_pill",
-            "approach_heading",
-            "approach_bottom_cta_label",
-            "approach_bottom_cta_url",
-            "approach_wave_image",
-            "differentiator_cards",
-            "approach_steps",
-        )
-
-    def update(self, instance, validated_data):
-        cards = validated_data.pop("differentiator_cards", None)
-        steps = validated_data.pop("approach_steps", None)
-        instance = super().update(instance, validated_data)
-        if cards is not None:
-            instance.differentiator_cards.all().delete()
-            for row in cards:
-                AboutDifferentiatorCard.objects.create(about=instance, **row)
-        if steps is not None:
-            instance.approach_steps.all().delete()
-            for row in steps:
-                AboutApproachStep.objects.create(about=instance, **row)
-        return instance
+        fields = [
+            "page_eyebrow", "page_title", "page_lede", "page_image",
+            "principles_section_eyebrow", "principles_section_title", "principles",
+            "whoweserve_image", "whoweserve_eyebrow", "whoweserve_title",
+            "whoweserve_body", "who_bullets",
+            "measure_section_eyebrow", "measure_section_title", "measure_section_lede",
+            "measure_cards",
+            "cta_heading", "cta_body",
+            "cta_primary_label", "cta_primary_url",
+            "cta_secondary_label", "cta_secondary_url",
+        ]
 
 
-class ContactSectorNestedSerializer(serializers.ModelSerializer):
+# ---------- Approach ----------------------------------------------------------
+
+
+class ApproachBlockBulletSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ContactSectorOption
-        fields = ("id", "sort_order", "label", "value")
+        model = ApproachBlockBullet
+        fields = ["text"]
 
 
-class ContactPageManageSerializer(serializers.ModelSerializer):
-    sector_options = ContactSectorNestedSerializer(many=True, required=False)
+class ApproachBlockSerializer(serializers.ModelSerializer):
+    bullets = ApproachBlockBulletSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ApproachBlock
+        fields = ["num", "title", "bullets"]
+
+
+class ApproachPageSerializer(serializers.ModelSerializer):
+    page_image = ImageOrUrlField(image_attr="page_image", url_attr="page_image_url")
+    blocks = ApproachBlockSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ApproachPage
+        fields = [
+            "page_eyebrow", "page_title", "page_lede", "page_image",
+            "blocks",
+            "cta_heading", "cta_body",
+            "cta_primary_label", "cta_primary_url",
+            "cta_secondary_label", "cta_secondary_url",
+        ]
+
+
+# ---------- Contact -----------------------------------------------------------
+
+
+class ContactSectorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactSector
+        fields = ["label"]
+
+
+class ContactPageSerializer(serializers.ModelSerializer):
+    page_image = ImageOrUrlField(image_attr="page_image", url_attr="page_image_url")
+    sectors = ContactSectorSerializer(many=True, read_only=True)
 
     class Meta:
         model = ContactPage
-        fields = (
-            "headline_gold",
-            "headline_dark",
-            "intro",
-            "submit_label",
-            "sector_options",
-        )
-
-    def update(self, instance, validated_data):
-        opts = validated_data.pop("sector_options", None)
-        instance = super().update(instance, validated_data)
-        if opts is not None:
-            instance.sector_options.all().delete()
-            for row in opts:
-                ContactSectorOption.objects.create(contact=instance, **row)
-        return instance
-
-
-class ImpactMetricNestedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ImpactMetric
-        fields = ("id", "sort_order", "stat", "label", "wide")
-
-
-class CaseStudyQuadrantNestedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CaseStudyQuadrant
-        fields = ("id", "sort_order", "label", "body")
-
-
-class CaseStudyNestedSerializer(serializers.ModelSerializer):
-    quadrants = CaseStudyQuadrantNestedSerializer(many=True, required=False)
-
-    class Meta:
-        model = CaseStudy
-        fields = ("id", "sort_order", "badge", "title", "quadrants")
-
-
-class ImpactPageManageSerializer(serializers.ModelSerializer):
-    metrics = ImpactMetricNestedSerializer(many=True, required=False)
-    case_studies = CaseStudyNestedSerializer(many=True, required=False)
-
-    class Meta:
-        model = ImpactPage
-        fields = (
-            "hero_eyebrow",
-            "headline",
-            "headline_highlight",
-            "metrics_section_title",
-            "case_studies_section_title",
-            "metrics",
-            "case_studies",
-        )
-
-    def update(self, instance, validated_data):
-        metrics = validated_data.pop("metrics", None)
-        cases = validated_data.pop("case_studies", None)
-        instance = super().update(instance, validated_data)
-        if metrics is not None:
-            instance.metrics.all().delete()
-            for row in metrics:
-                ImpactMetric.objects.create(impact=instance, **row)
-        if cases is not None:
-            instance.case_studies.all().delete()
-            for row in cases:
-                r = dict(row)
-                quads = r.pop("quadrants", [])
-                r.pop("id", None)
-                cs = CaseStudy.objects.create(impact=instance, **r)
-                for q in quads:
-                    qd = dict(q)
-                    qd.pop("id", None)
-                    CaseStudyQuadrant.objects.create(case_study=cs, **qd)
-        return instance
-
-
-class TechnologyDomainNestedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TechnologyDomain
-        fields = ("id", "sort_order", "title", "description", "wide", "icon_key")
-
-
-class TechnologyEnablementNestedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TechnologyEnablementItem
-        fields = ("id", "sort_order", "label", "icon_key")
-
-
-class TechnologyPageManageSerializer(serializers.ModelSerializer):
-    domains = TechnologyDomainNestedSerializer(many=True, required=False)
-    enablement_items = TechnologyEnablementNestedSerializer(many=True, required=False)
-
-    class Meta:
-        model = TechnologyPage
-        fields = (
-            "hero_label",
-            "title_black_1",
-            "title_black_2",
-            "title_yellow",
-            "overview_text",
-            "overview_sidebar_label",
-            "domains_heading",
-            "enablement_heading",
-            "outcome_eyebrow",
-            "outcome_headline",
-            "outcome_cta_label",
-            "outcome_cta_url",
-            "domains",
-            "enablement_items",
-        )
-
-    def update(self, instance, validated_data):
-        domains = validated_data.pop("domains", None)
-        items = validated_data.pop("enablement_items", None)
-        instance = super().update(instance, validated_data)
-        if domains is not None:
-            instance.domains.all().delete()
-            for row in domains:
-                TechnologyDomain.objects.create(tech_page=instance, **row)
-        if items is not None:
-            instance.enablement_items.all().delete()
-            for row in items:
-                TechnologyEnablementItem.objects.create(tech_page=instance, **row)
-        return instance
-
-
-class SiteSettingsManageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SiteSettings
-        fields = (
-            "meta_title",
-            "meta_description",
-            "logo",
-            "header_image",
-            "footer_tagline",
-            "footer_company_line1",
-            "footer_company_line2",
-            "social_facebook",
-            "social_google",
-            "social_instagram",
-            "social_youtube",
-            "footer_address",
-            "footer_email",
-            "footer_phone",
-            "copyright_line",
-        )
-
-
-class FooterLinkSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FooterLink
-        fields = ("id", "category", "label", "url", "sort_order")
-
-
-class SolutionDeliverableSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SolutionDeliverable
-        fields = ("id", "sort_order", "code", "text")
-
-
-class SolutionBriefSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Solution
-        fields = ("slug", "nav_title", "nav_subtitle", "is_published")
-
-
-class SolutionManageSerializer(serializers.ModelSerializer):
-    deliverables = SolutionDeliverableSerializer(many=True, required=False)
-
-    class Meta:
-        model = Solution
-        fields = (
-            "id",
-            "slug",
-            "is_published",
-            "nav_title",
-            "nav_subtitle",
-            "nav_column",
-            "nav_order",
-            "hero_label",
-            "title_black_1",
-            "title_black_2",
-            "title_yellow",
-            "overview_text",
-            "outcome_headline",
-            "outcome_cta",
-            "outcome_cta_url",
-            "deliverables",
-        )
-
-    def update(self, instance, validated_data):
-        dels = validated_data.pop("deliverables", None)
-        instance = super().update(instance, validated_data)
-        if dels is not None:
-            instance.deliverables.all().delete()
-            for row in dels:
-                SolutionDeliverable.objects.create(solution=instance, **row)
-        return instance
-
-    def create(self, validated_data):
-        dels = validated_data.pop("deliverables", [])
-        s = Solution.objects.create(**validated_data)
-        for row in dels:
-            SolutionDeliverable.objects.create(solution=s, **row)
-        return s
-
-
-class TrainingCardSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TrainingCard
-        fields = ("id", "sort_order", "icon_emoji", "title", "subtitle")
-
-
-class TrainingAreaBriefSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TrainingArea
-        fields = ("slug", "title", "is_published", "featured")
-
-
-class TrainingAreaManageSerializer(serializers.ModelSerializer):
-    cards = TrainingCardSerializer(many=True, required=False)
-
-    class Meta:
-        model = TrainingArea
-        fields = (
-            "id",
-            "slug",
-            "is_published",
-            "featured",
-            "hub_subtitle",
-            "hub_order",
-            "category",
-            "title",
-            "description_start",
-            "highlighted_text",
-            "description_end",
-            "deliver_section_title",
-            "display_style",
-            "outcome_tag",
-            "outcome_title",
-            "cards",
-        )
-
-    def update(self, instance, validated_data):
-        cards = validated_data.pop("cards", None)
-        instance = super().update(instance, validated_data)
-        if cards is not None:
-            instance.cards.all().delete()
-            for row in cards:
-                TrainingCard.objects.create(training=instance, **row)
-        return instance
-
-    def create(self, validated_data):
-        cards = validated_data.pop("cards", [])
-        t = TrainingArea.objects.create(**validated_data)
-        for row in cards:
-            TrainingCard.objects.create(training=t, **row)
-        return t
-
-
-class TrainingNavItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TrainingNavItem
-        fields = ("id", "sort_order", "title", "subtitle", "path")
+        fields = [
+            "page_eyebrow", "page_title", "page_lede", "page_image",
+            "hq_label", "hq_address",
+            "phone_label", "phone_number",
+            "email_label", "email_address",
+            "next_steps_label", "next_steps_text",
+            "sectors",
+        ]
 
 
 class ContactSubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactSubmission
-        fields = ("id", "name", "sector", "country", "project_description", "created_at", "ip_address")
-        read_only_fields = ("created_at", "ip_address")
+        fields = ["name", "organization", "email", "country", "sector", "message"]
 
 
-class PublicContactSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=255)
-    sector = serializers.CharField(max_length=120, required=False, allow_blank=True)
-    country = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    project_description = serializers.CharField(required=False, allow_blank=True)
+# ---------- Solutions ---------------------------------------------------------
 
 
-User = get_user_model()
+class SolutionDeliverableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolutionDeliverable
+        fields = ["text"]
 
 
-class CmsUserManageSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    sections = serializers.ListField(
-        child=serializers.CharField(max_length=64),
-        required=False,
-    )
+class SolutionListItemSerializer(serializers.ModelSerializer):
+    """Compact shape for the hub grid + adjacent links."""
+
+    hero_image = ImageOrUrlField(image_attr="hero_image", url_attr="hero_image_url")
+    class Meta:
+        model = Solution
+        fields = ["slug", "title", "snapshot", "hero_image"]
+
+
+class SolutionDetailSerializer(serializers.ModelSerializer):
+    hero_image = ImageOrUrlField(image_attr="hero_image", url_attr="hero_image_url")
+    deliver = SolutionDeliverableSerializer(source="deliverables", many=True, read_only=True)
+    adjacent = serializers.SerializerMethodField()
 
     class Meta:
-        model = User
-        fields = (
-            "id",
-            "username",
-            "email",
-            "is_active",
-            "is_superuser",
-            "password",
-            "sections",
+        model = Solution
+        fields = [
+            "slug", "title", "snapshot", "hero_image",
+            "hero_title", "hero_lede",
+            "overview_title", "overview_lede", "outcome",
+            "cta_label",
+            "deliver",
+            "adjacent",
+        ]
+
+    def get_adjacent(self, obj):
+        rows = (
+            obj.adjacent_links.filter(to_solution__is_published=True)
+            .select_related("to_solution")
+            .order_by("sort_order", "id")
         )
-        read_only_fields = ("id",)
+        return SolutionListItemSerializer(
+            [r.to_solution for r in rows], many=True, context=self.context
+        ).data
 
-    def validate_sections(self, value):
-        bad = [x for x in value if x not in ALL_CMS_SECTIONS]
-        if bad:
-            raise serializers.ValidationError(f"Unknown sections: {bad}")
-        return list(dict.fromkeys(value))
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        if instance.is_superuser:
-            data["sections"] = sorted(ALL_CMS_SECTIONS)
-        else:
-            try:
-                prof = instance.cms_profile
-                data["sections"] = list(prof.sections) if isinstance(prof.sections, list) else []
-            except CmsEditorProfile.DoesNotExist:
-                # Matches effective permissions (full access until a profile row exists).
-                data["sections"] = sorted(ALL_CMS_SECTIONS)
-        return data
+class SolutionsPageSerializer(serializers.ModelSerializer):
+    page_image = ImageOrUrlField(image_attr="page_image", url_attr="page_image_url")
+    class Meta:
+        model = SolutionsPage
+        fields = [
+            "page_eyebrow", "page_title", "page_lede", "page_image",
+            "section_eyebrow", "section_title",
+            "cta_heading", "cta_body",
+            "cta_primary_label", "cta_primary_url",
+            "cta_secondary_label", "cta_secondary_url",
+        ]
 
-    def create(self, validated_data):
-        sections = validated_data.pop("sections", None)
-        if sections is None:
-            sections = []
-        password = validated_data.pop("password", None)
-        if not password:
-            raise serializers.ValidationError({"password": "Required for new users."})
-        validated_data.setdefault("is_active", True)
-        validated_data.setdefault("is_superuser", False)
-        validated_data["is_staff"] = True
-        user = User.objects.create_user(password=password, **validated_data)
-        if not user.is_superuser:
-            CmsEditorProfile.objects.create(user=user, sections=sections)
-        return user
 
-    def update(self, instance, validated_data):
-        sections = validated_data.pop("sections", serializers.empty)
-        password = validated_data.pop("password", None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if password:
-            instance.set_password(password)
-        instance.save()
+# ---------- Training ----------------------------------------------------------
 
-        if instance.is_superuser:
-            CmsEditorProfile.objects.filter(user=instance).delete()
-        else:
-            if sections is not serializers.empty:
-                CmsEditorProfile.objects.update_or_create(
-                    user=instance,
-                    defaults={"sections": sections if isinstance(sections, list) else []},
-                )
-            else:
-                CmsEditorProfile.objects.get_or_create(user=instance, defaults={"sections": []})
-        return instance
+
+class TrainingDeliverableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrainingDeliverable
+        fields = ["text"]
+
+
+class CyberPhaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CyberPhase
+        fields = ["num", "label"]
+
+
+class CyberCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CyberCard
+        fields = ["tag", "title", "description"]
+
+
+class TrainingListItemSerializer(serializers.ModelSerializer):
+    hero_image = ImageOrUrlField(image_attr="hero_image", url_attr="hero_image_url")
+    class Meta:
+        model = TrainingArea
+        fields = ["slug", "title", "snapshot", "hero_image"]
+
+
+class TrainingDetailSerializer(serializers.ModelSerializer):
+    hero_image = ImageOrUrlField(image_attr="hero_image", url_attr="hero_image_url")
+    deliver = TrainingDeliverableSerializer(source="deliverables", many=True, read_only=True)
+    adjacent = serializers.SerializerMethodField()
+    cf_phases = CyberPhaseSerializer(many=True, read_only=True)
+    cf_cards = CyberCardSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = TrainingArea
+        fields = [
+            "slug", "title", "snapshot", "hero_image",
+            "hero_title", "hero_lede",
+            "overview_title", "overview_lede", "outcome",
+            "cta_label",
+            "deliver",
+            "adjacent",
+            "has_cyber_framework",
+            "cf_section_eyebrow", "cf_section_title", "cf_section_lede",
+            "cf_phases", "cf_cards",
+            "cf_foundation_tag", "cf_foundation_title", "cf_foundation_desc",
+        ]
+
+    def get_adjacent(self, obj):
+        rows = (
+            obj.adjacent_links.filter(to_training__is_published=True)
+            .select_related("to_training")
+            .order_by("sort_order", "id")
+        )
+        return TrainingListItemSerializer(
+            [r.to_training for r in rows], many=True, context=self.context
+        ).data
+
+
+class TrainingPageSerializer(serializers.ModelSerializer):
+    page_image = ImageOrUrlField(image_attr="page_image", url_attr="page_image_url")
+    class Meta:
+        model = TrainingPage
+        fields = [
+            "page_eyebrow", "page_title", "page_lede", "page_image",
+            "section_eyebrow", "section_title",
+            "cta_heading", "cta_body",
+            "cta_primary_label", "cta_primary_url",
+            "cta_secondary_label", "cta_secondary_url",
+        ]
+
+
+# ---------- Digital Fast Track -----------------------------------------------
+
+
+class DftMetricSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DftMetric
+        fields = ["num", "label"]
+
+
+class DftPillarPointSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DftPillarPoint
+        fields = ["text"]
+
+
+class DftPillarSerializer(serializers.ModelSerializer):
+    points = DftPillarPointSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = DftPillar
+        fields = ["num", "title", "blurb", "points"]
+
+
+class DftTimelineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DftTimeline
+        fields = ["num", "title", "description"]
+
+
+class DftOutcomeBulletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DftOutcomeBullet
+        fields = ["text"]
+
+
+class DigitalFastTrackPageSerializer(serializers.ModelSerializer):
+    page_image = ImageOrUrlField(image_attr="page_image", url_attr="page_image_url")
+    outcomes_image = ImageOrUrlField(image_attr="outcomes_image", url_attr="outcomes_image_url")
+    metrics = DftMetricSerializer(many=True, read_only=True)
+    pillars = DftPillarSerializer(many=True, read_only=True)
+    timeline = DftTimelineSerializer(many=True, read_only=True)
+    outcome_bullets = DftOutcomeBulletSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = DigitalFastTrackPage
+        fields = [
+            "page_eyebrow", "page_title", "page_lede", "page_image",
+            "page_cta_primary_label", "page_cta_primary_url",
+            "page_cta_secondary_label", "page_cta_secondary_url",
+            "why_section_eyebrow", "why_section_title", "why_section_lede",
+            "metrics",
+            "pillars_section_eyebrow", "pillars_section_title", "pillars_section_lede",
+            "pillars",
+            "timeline_section_eyebrow", "timeline_section_title", "timeline_section_lede",
+            "timeline",
+            "outcomes_image", "outcomes_eyebrow", "outcomes_title", "outcomes_body",
+            "outcome_bullets",
+            "cta_heading", "cta_body",
+            "cta_primary_label", "cta_primary_url",
+            "cta_secondary_label", "cta_secondary_url",
+        ]

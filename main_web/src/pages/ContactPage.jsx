@@ -1,74 +1,108 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
+import { publicClient } from "../api/publicClient";
+import { useContactPage } from "../hooks/usePublicApi";
 
-const SECTORS = [
-  "Energy Infrastructure",
-  "Renewables",
-  "Water & Sanitation",
-  "Waste Management & Recycling",
-  "Technology (Data Centers, Command Centers, Software)",
-  "Transportation (Roads, Ports)",
-  "Healthcare",
-  "Real Estate",
-  "Capital Access",
-  "Training & Skills Transfer",
-  "Multiple sectors / Cross-sector",
-];
+const CONTACT_FALLBACK = {
+  page_eyebrow: "Contact PGP",
+  page_title: "Let's build what lasts.",
+  page_lede:
+    "Whether you're structuring a partnership, delivering an infrastructure program, or modernizing operations with technology, PGP can help bring clarity, governance, and execution to your initiative.",
+  page_image: "/images/topo-navy.webp",
+  hq_label: "Headquarters",
+  hq_address: "724 W. Lancaster Ave, Suite 210\nWayne, PA 19087",
+  phone_label: "Phone",
+  phone_number: "610-602-4200",
+  email_label: "Email",
+  email_address: "info@peakglobalpartners.com",
+  next_steps_label: "Next steps",
+  next_steps_text:
+    "We review your inquiry within two business days. If aligned, we schedule a 30-minute scoping call, and discuss how PGP will approach the project.",
+  sectors: [
+    { label: "Energy Infrastructure" },
+    { label: "Renewables" },
+    { label: "Water & Sanitation" },
+    { label: "Waste Management & Recycling" },
+    { label: "Technology (Data Centers, Command Centers, Software)" },
+    { label: "Transportation (Roads, Ports)" },
+    { label: "Healthcare" },
+    { label: "Real Estate" },
+    { label: "Capital Access" },
+    { label: "Training & Skills Transfer" },
+    { label: "Multiple sectors / Cross-sector" },
+  ],
+};
 
 export default function ContactPage() {
-  const formRef = useRef(null);
-  const [status, setStatus] = useState({ kind: null, msg: "" });
-  const [submitting, setSubmitting] = useState(false);
+  const { data } = useContactPage();
+  const view = data || CONTACT_FALLBACK;
 
-  async function onSubmit(e) {
+  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState({ kind: null, message: "" });
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!formRef.current) return;
-    setStatus({ kind: null, msg: "" });
+    if (submitting) return;
+
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    if (fd.get("_gotcha")) return; // honeypot
+
+    const payload = {
+      name: (fd.get("name") || "").toString().trim(),
+      organization: (fd.get("organization") || "").toString().trim(),
+      email: (fd.get("email") || "").toString().trim(),
+      country: (fd.get("country") || "").toString().trim(),
+      sector: (fd.get("sector") || "").toString(),
+      message: (fd.get("message") || "").toString().trim(),
+    };
+
     setSubmitting(true);
+    setStatus({ kind: null, message: "" });
+    setFieldErrors({});
     try {
-      const data = new FormData(formRef.current);
-      const action = formRef.current.getAttribute("action");
-      if (action && action.includes("formspree.io")) {
-        const res = await fetch(action, {
-          method: "POST",
-          body: data,
-          headers: { Accept: "application/json" },
-        });
-        if (!res.ok) throw new Error("Network");
-      } else {
-        await new Promise((r) => setTimeout(r, 600));
-      }
-      formRef.current.reset();
+      await publicClient.post("/contact/", payload);
       setStatus({
         kind: "success",
-        msg:
+        message:
           "Thanks — your inquiry was received. A member of the PGP team will be in touch within two business days.",
       });
-    } catch {
-      setStatus({
-        kind: "error",
-        msg:
-          "Something went wrong sending your message. Please try again or email info@peakglobalpartners.com directly.",
-      });
+      form.reset();
+    } catch (err) {
+      const data = err?.response?.data;
+      if (data && typeof data === "object" && !Array.isArray(data)) {
+        setFieldErrors(data);
+        setStatus({
+          kind: "error",
+          message: "Some fields need attention.",
+        });
+      } else {
+        setStatus({
+          kind: "error",
+          message: `Something went wrong. Please try again or email ${view.email_address} directly.`,
+        });
+      }
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function fieldError(name) {
+    const v = fieldErrors[name];
+    if (!v) return null;
+    return Array.isArray(v) ? v.join(" ") : String(v);
   }
 
   return (
     <main id="main">
       <section className="page-header">
         <div className="page-header__bg">
-          <img src="/images/topo-navy.png" alt="" />
+          <img src={view.page_image} alt="" />
         </div>
         <div className="page-header__inner">
-          <div className="page-header__eyebrow">Contact PGP</div>
-          <h1 className="page-header__title">Let's build what lasts.</h1>
-          <p className="page-header__lede">
-            Whether you're structuring a partnership, delivering an
-            infrastructure program, or modernizing operations with technology,
-            PGP can help bring clarity, governance, and execution to your
-            initiative.
-          </p>
+          <div className="page-header__eyebrow">{view.page_eyebrow}</div>
+          <h1 className="page-header__title">{view.page_title}</h1>
+          <p className="page-header__lede">{view.page_lede}</p>
         </div>
       </section>
 
@@ -76,44 +110,30 @@ export default function ContactPage() {
         <div className="container">
           <div className="contact-grid">
             <div className="contact-info">
-              <h2>Headquarters</h2>
-              <p>
-                724 W. Lancaster Ave, Suite 210
-                <br />
-                Wayne, PA 19087
-              </p>
+              <h2>{view.hq_label}</h2>
+              <p style={{ whiteSpace: "pre-line" }}>{view.hq_address}</p>
               <dl>
-                <dt>Phone</dt>
+                <dt>{view.phone_label}</dt>
                 <dd>
-                  <a href="tel:+16106024200">610-602-4200</a>
-                </dd>
-                <dt>Email</dt>
-                <dd>
-                  <a href="mailto:info@peakglobalpartners.com">
-                    info@peakglobalpartners.com
+                  <a href={`tel:${view.phone_number.replace(/[^\d+]/g, "")}`}>
+                    {view.phone_number}
                   </a>
                 </dd>
-                <dt>Next steps</dt>
+                <dt>{view.email_label}</dt>
                 <dd>
-                  We review your inquiry within two business days. If aligned,
-                  we schedule a 30-minute scoping call, then come back with how
-                  PGP would approach the work.
+                  <a href={`mailto:${view.email_address}`}>{view.email_address}</a>
                 </dd>
+                <dt>{view.next_steps_label}</dt>
+                <dd>{view.next_steps_text}</dd>
               </dl>
             </div>
 
-            <form
-              ref={formRef}
-              className="contact-form"
-              action="https://formspree.io/f/info@peakglobalpartners.com"
-              method="POST"
-              onSubmit={onSubmit}
-            >
+            <form className="contact-form" onSubmit={handleSubmit} noValidate>
               {status.kind === "success" && (
-                <div className="form-success show">{status.msg}</div>
+                <div className="form-success show">{status.message}</div>
               )}
               {status.kind === "error" && (
-                <div className="form-error show">{status.msg}</div>
+                <div className="form-error show">{status.message}</div>
               )}
 
               <div className="form-row">
@@ -121,13 +141,12 @@ export default function ContactPage() {
                   <label htmlFor="name">
                     Name <span className="required">*</span>
                   </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    required
-                    placeholder="Your name"
-                  />
+                  <input type="text" id="name" name="name" required placeholder="Your name" />
+                  {fieldError("name") && (
+                    <div className="form-error show" style={{ marginTop: 6 }}>
+                      {fieldError("name")}
+                    </div>
+                  )}
                 </div>
                 <div className="form-field">
                   <label htmlFor="organization">Organization</label>
@@ -144,13 +163,12 @@ export default function ContactPage() {
                   <label htmlFor="email">
                     Email <span className="required">*</span>
                   </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    placeholder="you@example.com"
-                  />
+                  <input type="email" id="email" name="email" required placeholder="you@example.com" />
+                  {fieldError("email") && (
+                    <div className="form-error show" style={{ marginTop: 6 }}>
+                      {fieldError("email")}
+                    </div>
+                  )}
                 </div>
                 <div className="form-field">
                   <label htmlFor="country">Country / Region</label>
@@ -168,8 +186,8 @@ export default function ContactPage() {
                   <option value="" disabled>
                     Select a sector
                   </option>
-                  {SECTORS.map((s) => (
-                    <option key={s}>{s}</option>
+                  {view.sectors.map((s) => (
+                    <option key={s.label}>{s.label}</option>
                   ))}
                 </select>
               </div>
@@ -184,28 +202,22 @@ export default function ContactPage() {
                   required
                   placeholder="Tell us about your initiative — current stage, stakeholders, timeline, and what success looks like."
                 />
+                {fieldError("message") && (
+                  <div className="form-error show" style={{ marginTop: 6 }}>
+                    {fieldError("message")}
+                  </div>
+                )}
               </div>
               <div className="form-field" style={{ display: "none" }}>
                 <label htmlFor="_gotcha">Leave this empty</label>
-                <input
-                  type="text"
-                  id="_gotcha"
-                  name="_gotcha"
-                  tabIndex={-1}
-                  autoComplete="off"
-                />
+                <input type="text" id="_gotcha" name="_gotcha" tabIndex={-1} autoComplete="off" />
               </div>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={submitting}
-              >
+              <button type="submit" className="btn btn-primary" disabled={submitting}>
                 {submitting ? "Sending…" : "Request a Consultation"}{" "}
                 <span className="arrow" aria-hidden="true">→</span>
               </button>
               <p className="form-disclosure">
-                By submitting, you consent to PGP contacting you about your
-                inquiry. We don't share submissions.
+                By submitting, you consent to PGP contacting you about your inquiry. We don't share submissions.
               </p>
             </form>
           </div>

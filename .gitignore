@@ -39,3 +39,7 @@ cms-admin/dist/
 # Reference design drop (not part of the React app)
 Peak Global Partners 4.0/
 Peak Global Partners 4.0.zip
+
+# Local dev runtime artifacts
+.run/
+backend/db.sqlite3.bak.*

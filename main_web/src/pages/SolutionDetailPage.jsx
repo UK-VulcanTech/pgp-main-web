@@ -1,21 +1,51 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import { SOLUTIONS, SOLUTION_BY_SLUG } from "../data/solutions";
+import { useSolutionDetail } from "../hooks/usePublicApi";
+
+function buildFallback(slug) {
+  const sector = SOLUTION_BY_SLUG[slug];
+  if (!sector) return null;
+  return {
+    slug: sector.slug,
+    title: sector.title,
+    snapshot: sector.snapshot,
+    hero_image: sector.heroImage,
+    hero_title: sector.heroTitle,
+    hero_lede: sector.heroLede,
+    overview_title: sector.overviewTitle,
+    overview_lede: sector.overviewLede,
+    outcome: sector.outcome,
+    cta_label: sector.ctaLabel,
+    deliver: sector.deliver.map((text) => ({ text })),
+    adjacent: sector.adjacent
+      .map((s) => SOLUTION_BY_SLUG[s])
+      .filter(Boolean)
+      .map((s) => ({
+        slug: s.slug,
+        title: s.title,
+        snapshot: s.snapshot,
+        hero_image: s.heroImage,
+      })),
+  };
+}
 
 export default function SolutionDetailPage() {
   const { slug } = useParams();
-  const sector = SOLUTION_BY_SLUG[slug];
+  const { data, isError } = useSolutionDetail(slug);
+  const fallback = buildFallback(slug);
 
-  if (!sector) return <Navigate to="/solutions" replace />;
+  // No fallback + API error → 404 to hub.
+  if (!fallback && isError) return <Navigate to="/solutions" replace />;
+  // Still loading and no fallback known: send to hub rather than a blank.
+  if (!fallback && !data) return <Navigate to="/solutions" replace />;
 
-  const adjacentSectors = sector.adjacent
-    .map((s) => SOLUTION_BY_SLUG[s])
-    .filter(Boolean);
+  const sector = data || fallback;
 
   return (
     <main id="main">
       <section className="sector-hero">
         <div className="sector-hero__bg">
-          <img src={sector.heroImage} alt="" />
+          <img src={sector.hero_image} alt="" />
         </div>
         <div className="sector-hero__inner">
           <div className="breadcrumb">
@@ -23,7 +53,7 @@ export default function SolutionDetailPage() {
             <span>/</span>
             <span>{sector.title}</span>
           </div>
-          <h1>{sector.heroTitle}</h1>
+          <h1>{sector.hero_title}</h1>
           <p
             className="hero__lede"
             style={{
@@ -32,7 +62,7 @@ export default function SolutionDetailPage() {
               maxWidth: 820,
             }}
           >
-            {sector.heroLede}
+            {sector.hero_lede}
           </p>
         </div>
       </section>
@@ -42,8 +72,8 @@ export default function SolutionDetailPage() {
           <div className="sector-body">
             <div>
               <div className="section-eyebrow">Overview</div>
-              <h2>{sector.overviewTitle}</h2>
-              <p className="section-lede">{sector.overviewLede}</p>
+              <h2>{sector.overview_title}</h2>
+              <p className="section-lede">{sector.overview_lede}</p>
 
               <div className="outcome-band">
                 <div className="label">Outcome focus</div>
@@ -52,7 +82,7 @@ export default function SolutionDetailPage() {
 
               <div style={{ marginTop: "var(--space-8)" }}>
                 <Link className="btn btn-primary" to="/contact">
-                  {sector.ctaLabel}{" "}
+                  {sector.cta_label}{" "}
                   <span className="arrow" aria-hidden="true">→</span>
                 </Link>
               </div>
@@ -61,8 +91,8 @@ export default function SolutionDetailPage() {
             <div className="sector-body__deliver">
               <h3>What we deliver</h3>
               <ul>
-                {sector.deliver.map((d) => (
-                  <li key={d}>{d}</li>
+                {sector.deliver.map((d, i) => (
+                  <li key={i}>{d.text}</li>
                 ))}
               </ul>
             </div>
@@ -70,7 +100,7 @@ export default function SolutionDetailPage() {
         </div>
       </section>
 
-      {adjacentSectors.length > 0 && (
+      {sector.adjacent && sector.adjacent.length > 0 && (
         <section
           className="compact"
           style={{ background: "var(--color-surface-offset)" }}
@@ -86,7 +116,7 @@ export default function SolutionDetailPage() {
               </h2>
             </div>
             <div className="sector-grid">
-              {adjacentSectors.map((s) => (
+              {sector.adjacent.map((s) => (
                 <Link
                   key={s.slug}
                   to={`/solutions/${s.slug}`}

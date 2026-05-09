@@ -242,6 +242,10 @@ export default function NavBar() {
   const [openKey, setOpenKey] = useState(null);
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "light";
+    const current = document.documentElement.getAttribute("data-theme");
+    if (current === "dark" || current === "light") return current;
+    const stored = localStorage.getItem("pgp-theme");
+    if (stored === "dark" || stored === "light") return stored;
     return window.matchMedia?.("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light";
@@ -250,6 +254,11 @@ export default function NavBar() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
+    try {
+      localStorage.setItem("pgp-theme", theme);
+    } catch (e) {
+      // ignore storage failures
+    }
   }, [theme]);
 
   useEffect(() => {

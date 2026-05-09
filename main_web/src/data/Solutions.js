@@ -4,7 +4,7 @@ export const SOLUTIONS = [
     title: "Energy Infrastructure",
     snapshot:
       "Modernize and operate energy systems to improve reliability, resilience, and long-term performance.",
-    heroImage: "/images/energy-aerial.png",
+    heroImage: "/images/energy-aerial.webp",
     heroTitle: "Energy infrastructure for reliable growth.",
     heroLede:
       "PGP supports the development, modernization, and operational performance of energy infrastructure — aligning stakeholders and delivering end-to-end execution that improves reliability and long-term maintainability.",
@@ -28,7 +28,7 @@ export const SOLUTIONS = [
     title: "Renewables",
     snapshot:
       "Deliver scalable renewable programs with disciplined execution and operational readiness.",
-    heroImage: "/images/energy-aerial.png",
+    heroImage: "/images/energy-aerial.webp",
     heroTitle: "Renewable programs built to scale.",
     heroLede:
       "PGP enables renewable energy programs — from early-stage planning through operational readiness — combining execution discipline with performance-driven operating models.",
@@ -51,7 +51,7 @@ export const SOLUTIONS = [
     title: "Water & Sanitation",
     snapshot:
       "Strengthen water access and sanitation services through lifecycle-focused delivery and operations.",
-    heroImage: "/images/water-facility.png",
+    heroImage: "/images/water-facility.webp",
     heroTitle: "Water and sanitation systems that improve access and reliability.",
     heroLede:
       "PGP improves water and sanitation infrastructure across industrial, municipal, and residential needs — focused on lifecycle operations and service continuity, not just construction.",
@@ -75,7 +75,7 @@ export const SOLUTIONS = [
     title: "Waste & Recycling",
     snapshot:
       "Build modern waste systems that improve public health, efficiency, and environmental outcomes.",
-    heroImage: "/images/waste-recovery.png",
+    heroImage: "/images/waste-recovery.webp",
     heroTitle: "Modern waste systems with sustainable operations.",
     heroLede:
       "PGP supports modern waste management and recycling programs that improve public health and environmental outcomes — while strengthening municipal efficiency and accountability.",
@@ -99,7 +99,7 @@ export const SOLUTIONS = [
     title: "Technology",
     snapshot:
       "Deploy solutions, data centers, and command centers that improve visibility, coordination, and performance.",
-    heroImage: "/images/datacenter-hall.png",
+    heroImage: "/images/datacenter-hall.webp",
     heroTitle: "Technology that enables real-world operations.",
     heroLede:
       "PGP delivers technology solutions that strengthen service delivery across infrastructure and public-sector environments — built for deployment in challenging conditions and designed to scale.",
@@ -124,7 +124,7 @@ export const SOLUTIONS = [
     title: "Transportation",
     snapshot:
       "Deliver roads and port operations improvements that increase throughput and mobility.",
-    heroImage: "/images/port-dawn.png",
+    heroImage: "/images/port-dawn.webp",
     heroTitle: "Transportation infrastructure and operations that unlock growth.",
     heroLede:
       "PGP supports transportation programs that improve mobility and throughput — delivering governance, operational frameworks, and technology enablement for long-term performance.",
@@ -146,7 +146,7 @@ export const SOLUTIONS = [
     title: "Healthcare",
     snapshot:
       "Build clinics and operational foundations that expand access and strengthen continuity of care.",
-    heroImage: "/images/clinic-aerial.png",
+    heroImage: "/images/clinic-aerial.webp",
     heroTitle: "Healthcare infrastructure that expands access.",
     heroLede:
       "PGP advances healthcare access by delivering clinic infrastructure programs and the operational foundations needed to keep facilities functional, staffed, and supplied.",
@@ -169,7 +169,7 @@ export const SOLUTIONS = [
     title: "Real Estate",
     snapshot:
       "Develop major asset classes with disciplined execution and operations-ready delivery.",
-    heroImage: "/images/real-estate-aerial.png",
+    heroImage: "/images/real-estate-aerial.webp",
     heroTitle: "Real estate development across major asset classes.",
     heroLede:
       "PGP develops real estate across all major asset classes — combining disciplined execution, stakeholder coordination, and technology-enabled operations to support long-term value.",
@@ -192,7 +192,7 @@ export const SOLUTIONS = [
     title: "Capital Access",
     snapshot:
       "Align funding relationships and delivery readiness to move projects from plan to execution.",
-    heroImage: "/images/infrastructure.png",
+    heroImage: "/images/infrastructure.webp",
     heroTitle: "Capital access that accelerates delivery.",
     heroLede:
       "PGP helps partners establish and expand funding relationships required to deliver infrastructure and technology programs — bridging strategy with finance so projects are structured for execution and sustainment.",

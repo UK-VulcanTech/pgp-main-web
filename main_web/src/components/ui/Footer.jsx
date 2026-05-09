@@ -99,7 +99,7 @@ export default function Footer() {
                 <Link to="/training/digital-workforce-training">Digital Workforce Training</Link>
               </li>
             </ul>
-            <h4 style={{ marginTop: "var(--space-7)" }}>Company</h4>
+            <h4 style={{ marginTop: "var(--space-12)" }}>Company</h4>
             <ul>
               <li>
                 <Link to="/about">About</Link>

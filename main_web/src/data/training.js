@@ -4,7 +4,7 @@ export const TRAININGS = [
     title: "Skills Transfer",
     snapshot:
       "Train-the-trainer programs, certification pathways, and competency measurement that builds repeatable local standards.",
-    heroImage: "/images/training-session.png",
+    heroImage: "/images/training-session.webp",
     heroTitle: "Skills transfer that's measurable and repeatable.",
     heroLede:
       "PGP delivers skills transfer that is measurable and repeatable — building local teams that can operate programs independently through structured curricula, assessments, and train-the-trainer models.",
@@ -31,7 +31,7 @@ export const TRAININGS = [
     title: "Intelligence Training",
     snapshot:
       "Programmatic capability building emphasizing governance, lawful process, and professional standards.",
-    heroImage: "/images/training-session.png",
+    heroImage: "/images/training-session.webp",
     heroTitle: "Intelligence training at the programmatic level.",
     heroLede:
       "PGP supports intelligence training at a programmatic and institutional level, emphasizing governance, lawful process, and professional standards to build accountable operating models and sustainable training pipelines.",
@@ -58,7 +58,7 @@ export const TRAININGS = [
     title: "Technology Training",
     snapshot:
       "Deployment operations, software alignment, and workforce readiness — integrated into broader infrastructure needs.",
-    heroImage: "/images/datacenter-hall.png",
+    heroImage: "/images/datacenter-hall.webp",
     heroTitle: "Technology training that meets operations where they are.",
     heroLede:
       "PGP supports technology training initiatives focused on deployment operations, software alignment, and workforce readiness — integrated into broader infrastructure and operational needs such as data center management, SOPs, and monitoring.",
@@ -84,7 +84,7 @@ export const TRAININGS = [
     title: "Cybersecurity Training",
     snapshot:
       "Role-based pathways for executives, operators, and IT/security teams — aligning governance, operations, and technology.",
-    heroImage: "/images/datacenter-hall.png",
+    heroImage: "/images/datacenter-hall.webp",
     heroTitle: "Cybersecurity training across the whole operating stack.",
     heroLede:
       "PGP strengthens cybersecurity for governments, enterprises, and critical infrastructure by aligning governance, operations, and technology — so organizations can reduce risk, improve visibility, and respond faster to threats without disrupting essential services.",
@@ -169,7 +169,7 @@ export const TRAININGS = [
     title: "Digital Workforce Training",
     snapshot:
       "Governance, tailored curricula, comprehensive support, and a communications strategy that drives digital adoption and reduces change resistance.",
-    heroImage: "/images/training-session.png",
+    heroImage: "/images/training-session.webp",
     heroTitle: "Digital workforce training that powers transformation.",
     heroLede:
       "PGP partners with governments and enterprises to deliver digital transformation through a structured approach to governance, training, and ongoing support — equipping teams with the skills to fully utilize new digital systems and sustain the benefits long after rollout.",
