@@ -2352,6 +2352,15 @@ body.nav-open {
   overflow: hidden;
 }
 
+/* Belt-and-suspenders: when the drawer is closed, force any
+   internally-expanded mega menu to be hidden so the slide-up animation
+   doesn't show a tall-but-empty drawer with a stale dropdown content. */
+@media (max-width: 1280px) {
+  .primary-nav:not(.open) .nav-dropdown.open .mega-menu {
+    display: none;
+  }
+}
+
 /* Desktop: keep everything on one line, give the nav a little
    extra horizontal padding from the contact button. */
 @media (min-width: 1281px) {

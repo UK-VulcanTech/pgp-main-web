@@ -240,6 +240,7 @@ export default function NavBar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [openKey, setOpenKey] = useState(null);
+  const navRef = useRef(null);
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "light";
     const current = document.documentElement.getAttribute("data-theme");
@@ -290,8 +291,17 @@ export default function NavBar() {
   useEffect(() => {
     if (open) {
       document.body.classList.add("nav-open");
+      // Always start the drawer scrolled to the top, even if a previous
+      // open scrolled deep into expanded mega menus. Without this, closing
+      // the drawer animates from a scrolled-down position so only the
+      // bottom items (e.g. Approach) flash visible during the slide-up.
+      if (navRef.current) navRef.current.scrollTop = 0;
     } else {
       document.body.classList.remove("nav-open");
+      // Collapse any open mega menu so the next open is a clean state.
+      setOpenKey(null);
+      // Reset scroll on close so the slide-up isn't capped at "Approach".
+      if (navRef.current) navRef.current.scrollTop = 0;
     }
     return () => document.body.classList.remove("nav-open");
   }, [open]);
@@ -323,7 +333,7 @@ export default function NavBar() {
             />
             <span>Peak Global Partners</span>
           </Link>
-          <nav className={`primary-nav${open ? " open" : ""}`} aria-label="Primary">
+          <nav ref={navRef} className={`primary-nav${open ? " open" : ""}`} aria-label="Primary">
             <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : undefined)}>
               Home
             </NavLink>
