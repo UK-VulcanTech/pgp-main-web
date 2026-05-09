@@ -195,9 +195,7 @@ section.compact { padding-block: clamp(var(--space-12), 6vw, var(--space-20)); }
   position: sticky;
   top: 0;
   z-index: 100;
-  background: color-mix(in oklab, var(--color-bg) 88%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--color-bg);
   border-bottom: 1px solid transparent;
   transition: border-color var(--transition-interactive), background var(--transition-interactive);
 }
@@ -2412,16 +2410,15 @@ body.nav-open {
   .site-logo span { display: none; }
 }
 
-/* Make the sticky header always visible at the top of the page,
-   not just when scrolled. The previous color-mix on transparent
-   blended into the navy hero so users couldn't tell where the
-   header ended. */
+/* Sticky header must be FULLY opaque so page content (eyebrows,
+   titles like "Approach · How we deliver") never bleeds through
+   and looks like it's overlaying the logo/navbar. */
 .site-header {
-  background: color-mix(in oklab, var(--color-bg) 92%, transparent);
+  background: var(--color-bg);
   border-bottom-color: color-mix(in oklab, var(--color-divider) 60%, transparent);
 }
 .site-header.scrolled {
-  background: color-mix(in oklab, var(--color-bg) 96%, transparent);
+  background: var(--color-bg);
   border-bottom-color: var(--color-divider);
 }
 
