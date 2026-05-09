@@ -164,41 +164,6 @@ const TRAINING_ITEMS = [
   },
 ];
 
-const COMPANY_ITEMS = [
-  {
-    to: "/about",
-    title: "About",
-    sub: "Who we are and how we work",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="8" r="3.5" />
-        <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-      </svg>
-    ),
-  },
-  {
-    to: "/approach",
-    title: "Approach",
-    sub: "How we deliver outcomes",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 18 L4 6 M4 6 L20 6 M4 6 L10 12 L14 8 L20 14" />
-        <circle cx="20" cy="14" r="1.6" fill="currentColor" stroke="none" />
-      </svg>
-    ),
-  },
-  {
-    to: "/digital-fast-track",
-    title: "Digital Fast Track",
-    sub: "Accelerated transformation program",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M13 2 L4 14 h7 l-1 8 9-12 h-7 z" fill="currentColor" stroke="none" />
-      </svg>
-    ),
-  },
-];
-
 function MegaMenu({ items, narrow }) {
   return (
     <div className={`mega-menu${narrow ? " mega-menu--narrow" : ""}`} role="menu">
@@ -372,6 +337,9 @@ export default function NavBar() {
             <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : undefined)}>
               Home
             </NavLink>
+            <NavLink to="/about" className={({ isActive }) => (isActive ? "active" : undefined)}>
+              About
+            </NavLink>
             <NavDropdown
               to="/solutions"
               label="Solutions"
@@ -389,15 +357,12 @@ export default function NavBar() {
               openKey={openKey}
               setOpenKey={setOpenKey}
             />
-            <NavDropdown
-              to="/about"
-              label="Company"
-              items={COMPANY_ITEMS}
-              narrow
-              dropdownKey="company"
-              openKey={openKey}
-              setOpenKey={setOpenKey}
-            />
+            <NavLink to="/digital-fast-track" className={({ isActive }) => (isActive ? "active" : undefined)}>
+              Digital Fast Track
+            </NavLink>
+            <NavLink to="/approach" className={({ isActive }) => (isActive ? "active" : undefined)}>
+              Approach
+            </NavLink>
           </nav>
           <button
             type="button"
