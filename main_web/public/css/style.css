@@ -2232,7 +2232,7 @@ form.contact-form {
    - Inside the mobile drawer, render mega menus as plain
      stacked lists rather than floating popovers.
    ========================================================= */
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   .primary-nav {
     position: fixed;
     top: 4.5rem;
@@ -2325,7 +2325,7 @@ form.contact-form {
 .nav-backdrop {
   display: none;
 }
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   .nav-backdrop {
     display: block;
     position: fixed;
@@ -2344,32 +2344,40 @@ form.contact-form {
   }
 }
 
-/* Lock background scroll while the drawer is open. */
+/* Lock background scroll while the drawer is open. The drawer itself
+   has overflow-y: auto + overscroll-behavior: contain so it scrolls
+   independently. We only hide overflow on body — touch-action stays
+   default so taps inside the drawer work on iOS. */
 body.nav-open {
   overflow: hidden;
-  touch-action: none;
 }
 
 /* Desktop: keep everything on one line, give the nav a little
    extra horizontal padding from the contact button. */
-@media (min-width: 1181px) {
-  .primary-nav { gap: 4px; }
+@media (min-width: 1281px) {
+  .primary-nav { gap: 4px; min-width: 0; flex-shrink: 1; }
   .primary-nav a { padding-inline: 12px; }
-  .header-actions { gap: var(--space-4); }
+  .header-actions { gap: var(--space-4); flex-shrink: 0; }
+  .site-header__inner { gap: var(--space-6); }
+}
+
+/* Tablet header: hide the "Peak Global Partners" wordmark so the
+   logo, theme toggle, Contact CTA, and hamburger all fit on iPad
+   portrait (768px) without crowding. */
+@media (max-width: 1024px) {
+  .site-logo span { display: none; }
 }
 
 /* Mobile header: things were spilling off-screen because the
-   logo wordmark + theme toggle + Contact button + hamburger
-   added up to more than 375px. Hide the wordmark and the
-   redundant Contact CTA (already in the drawer) on small
-   viewports, and clamp the logo image. */
+   logo + theme toggle + Contact button + hamburger added up to
+   more than 375px. Hide the redundant Contact CTA (already in
+   the drawer) on small viewports and clamp the logo image. */
 @media (max-width: 720px) {
   .site-header__inner {
     height: 4rem;
     gap: var(--space-2);
     padding-inline: var(--space-4);
   }
-  .site-logo span { display: none; }
   .site-logo__img { width: 32px; }
   .header-actions .btn-primary { display: none; }
   .header-actions { gap: var(--space-2); }
