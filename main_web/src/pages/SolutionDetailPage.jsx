@@ -1,5 +1,5 @@
 import { Link, Navigate, useParams } from "react-router-dom";
-import { SOLUTIONS, SOLUTION_BY_SLUG } from "../data/solutions";
+import { SOLUTIONS, SOLUTION_BY_SLUG } from "../data/Solutions";
 import { useSolutionDetail } from "../hooks/usePublicApi";
 
 function buildFallback(slug) {

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { SOLUTIONS } from "../data/solutions";
+import { SOLUTIONS } from "../data/Solutions";
 import { useSolutionList, useSolutionsPage } from "../hooks/usePublicApi";
 
 const SOLUTIONS_PAGE_FALLBACK = {

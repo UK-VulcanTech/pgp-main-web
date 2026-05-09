@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { SOLUTIONS } from "../data/solutions";
+import { SOLUTIONS } from "../data/Solutions";
 import { useHomePage, useSolutionList } from "../hooks/usePublicApi";
 
 const HOME_FALLBACK = {
