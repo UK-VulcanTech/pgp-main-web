@@ -327,11 +327,10 @@ export default function NavBar() {
             <img
               className="site-logo__img"
               src="/images/pgp-logo.png"
-              alt=""
+              alt="Peak Global Partners"
               width="188"
               height="151"
             />
-            <span>Peak Global Partners</span>
           </Link>
           <nav ref={navRef} className={`primary-nav${open ? " open" : ""}`} aria-label="Primary">
             <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : undefined)}>
