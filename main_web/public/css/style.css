@@ -2240,42 +2240,60 @@ form.contact-form {
     right: 0;
     background: var(--color-bg);
     border-bottom: 1px solid var(--color-divider);
+    display: flex;
     flex-direction: column;
     align-items: stretch;
     padding: var(--space-4);
-    gap: 0;
+    gap: 2px;
     transform: translateY(-110%);
     transition: transform var(--transition-slow);
     box-shadow: var(--shadow-md);
-    max-height: calc(100vh - 4.5rem);
+    max-height: calc(100dvh - 4.5rem);
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    z-index: 90;
   }
   .primary-nav.open { transform: translateY(0); }
   .primary-nav a {
     padding: var(--space-3) var(--space-4);
     font-size: var(--text-base);
     white-space: normal;
+    min-height: 44px;
   }
   .menu-toggle { display: inline-flex; }
 
+  /* Trigger + caret share a single row; mega menu spans full width below. */
   .nav-dropdown {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: stretch;
     width: 100%;
   }
-  .nav-dropdown__trigger { flex: 1; }
+  .nav-dropdown__trigger {
+    grid-column: 1;
+    grid-row: 1;
+    flex: none;
+  }
   .nav-dropdown__caret {
-    align-self: flex-end;
-    margin: -2.25rem 8px 0 0;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: stretch;
+    margin: 0;
+    width: 44px;
+    height: auto;
+    border-radius: var(--radius-md);
   }
 
   .mega-menu {
+    grid-column: 1 / -1;
+    grid-row: 2;
     position: static;
     transform: none;
     width: 100%;
     background: var(--color-surface-offset);
     border: 1px solid var(--color-divider);
+    border-radius: var(--radius-md);
     box-shadow: none;
     padding: var(--space-2);
     margin-top: var(--space-2);
@@ -2290,10 +2308,46 @@ form.contact-form {
     transform: none;
   }
   .mega-menu__grid { grid-template-columns: 1fr; gap: 2px; }
-  .mega-item { color: var(--color-text); }
+  .mega-item { color: var(--color-text); padding: var(--space-3) var(--space-4); min-height: 44px; }
   .mega-item:hover { background: var(--color-surface); }
   .mega-item__title { color: var(--color-text); }
   .mega-item__sub { color: var(--color-text-muted); }
+
+  .menu-toggle {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Backdrop behind the open mobile drawer (closes on tap, dims content). */
+.nav-backdrop {
+  display: none;
+}
+@media (max-width: 1180px) {
+  .nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 22, 40, 0.45);
+    border: 0;
+    padding: 0;
+    z-index: 80;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+  .nav-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Lock background scroll while the drawer is open. */
+body.nav-open {
+  overflow: hidden;
+  touch-action: none;
 }
 
 /* Desktop: keep everything on one line, give the nav a little
