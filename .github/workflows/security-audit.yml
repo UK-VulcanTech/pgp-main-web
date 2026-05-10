@@ -1,0 +1,57 @@
+name: Security audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly Monday 04:00 UTC — catches new CVEs in unchanged dependencies
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+jobs:
+  python-audit:
+    name: pip-audit (backend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pip-audit
+        run: python -m pip install pip-audit
+      - name: Audit backend/requirements.txt
+        run: pip-audit -r backend/requirements.txt --strict --vulnerability-service osv
+
+  npm-audit-main:
+    name: npm audit (main_web)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: main_web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: main_web
+      - name: Audit (fail on high/critical)
+        working-directory: main_web
+        run: npm audit --audit-level=high
+
+  npm-audit-cms:
+    name: npm audit (cms-admin)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: cms-admin/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: cms-admin
+      - name: Audit (fail on high/critical)
+        working-directory: cms-admin
+        run: npm audit --audit-level=high
